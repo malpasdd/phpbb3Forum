@@ -1,0 +1,32 @@
+{
+    "name": "hifikabin/navbarsearch",
+    "type": "phpbb-extension",
+    "description": "Adds NavBar Search which is a visual match to my Google Search Extension 3.1.x NOTE This extension is for phpBB3.1.x ONLY",
+    "homepage": "http://phpbb.hifikabin.me.uk",
+    "version": "3.1.0",
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "James Newcombe",
+            "username": "HiFiKabin",
+            "email": "webmaster@hifikabin.me.uk",
+            "homepage": "http://phpbb.hifikabin.me.uk",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.3",
+        "phpbb/phpbb": ">=3.1.0 <3.2.0.@dev"
+    },
+    "extra": {
+        "display-name": "NavBar Search",
+        "soft-require": {
+            "phpbb/phpbb": ">=3.1.0 <3.2.0.@dev"
+        },
+        "version-check": {
+            "host": "www.phpbb.com",
+            "directory": "/customise/db/extension/navbar_search",
+            "filename": "version_check"
+        }
+    }
+}

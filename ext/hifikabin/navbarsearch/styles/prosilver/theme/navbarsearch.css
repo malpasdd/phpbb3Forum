@@ -1,0 +1,23 @@
+.headerbar #search-box {
+      display: none !important;
+}
+#n-search-box {
+	box-shadow:none;
+	float:right;
+	margin-top:3px; 
+	margin-left:15px; 
+	margin-right:10px;
+}
+.rtl #n-search-box {
+	box-shadow:none;
+	float:left;
+	margin-top:3px; 
+	margin-left:10px; 
+	margin-right:15px;
+}
+.navbar #search-icon {
+      border-radius: 0px 4px 4px 0px;
+}
+.rtl .navbar #search-icon {
+      border-radius: 4px 0px 0px 4px;
+}

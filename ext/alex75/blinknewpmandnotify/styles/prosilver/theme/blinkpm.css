@@ -1,0 +1,15 @@
+@keyframes blink-pm {
+	from {color: #FF0000;}
+    to {visibility: hidden;}
+}
+
+@-webkit-keyframes blink-pm {
+	from {color: #FF0000;}
+    to {visibility: hidden;}
+}
+
+li.icon-pm strong{
+	color: #FF0000;
+	animation: blink-pm 1s steps(2, start) infinite;
+	-webkit-animation: blink-pm 1s steps(2, start) infinite;
+}
