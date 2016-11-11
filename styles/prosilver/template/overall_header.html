@@ -67,45 +67,40 @@
 
 <!-- EVENT overall_header_stylesheets_after -->
 
+<link href="./styles/prosilver/theme/podforak.css?assets_version={T_ASSETS_VERSION}" rel="stylesheet">
+
 </head>
 <body id="phpbb" class="nojs notouch section-{SCRIPT_NAME} {S_CONTENT_DIRECTION} {BODY_CLASS}">
 
 <!-- EVENT overall_header_body_before -->
 
-<div id="wrap">
+<div id="wrap1">
 	<a id="top" class="anchor" accesskey="t"></a>
 	<div id="page-header">
 		<div class="headerbar" role="banner">
 		<!-- EVENT overall_header_headerbar_before -->
 			<div class="inner">
-
-			<div id="site-description">
-				<a id="logo" class="logo" href="<!-- IF U_SITE_HOME -->{U_SITE_HOME}<!-- ELSE -->{U_INDEX}<!-- ENDIF -->" title="<!-- IF U_SITE_HOME -->{L_SITE_HOME}<!-- ELSE -->{L_INDEX}<!-- ENDIF -->">{SITE_LOGO_IMG}</a>
-				<h1>{SITENAME}</h1>
-				<p>{SITE_DESCRIPTION}</p>
-				<p class="skiplink"><a href="#start_here">{L_SKIP}</a></p>
-			</div>
-
-			<!-- EVENT overall_header_searchbox_before -->
-			<!-- IF S_DISPLAY_SEARCH and not S_IN_SEARCH -->
-			<div id="search-box" class="search-box search-header" role="search">
-				<form action="{U_SEARCH}" method="get" id="search">
-				<fieldset>
-					<input name="keywords" id="keywords" type="search" maxlength="128" title="{L_SEARCH_KEYWORDS}" class="inputbox search tiny" size="20" value="{SEARCH_WORDS}" placeholder="{L_SEARCH_MINI}" />
-					<button class="button icon-button search-icon" type="submit" title="{L_SEARCH}">{L_SEARCH}</button>
-					<a href="{U_SEARCH}" class="button icon-button search-adv-icon" title="{L_SEARCH_ADV}">{L_SEARCH_ADV}</a>
-					{S_SEARCH_HIDDEN_FIELDS}
-				</fieldset>
-				</form>
-			</div>
-			<!-- ENDIF -->
-
+				<a id="logo" class="logo" href="<!-- IF U_SITE_HOME -->{U_SITE_HOME}<!-- ELSE -->{U_INDEX}<!-- ENDIF -->" title="<!-- IF U_SITE_HOME -->{L_SITE_HOME}<!-- ELSE -->{L_INDEX}<!-- ENDIF -->"><img src="./styles/prosilver/theme/images/banner.jpg" /></a>
 			</div>
 			<!-- EVENT overall_header_headerbar_after -->
 		</div>
-		<!-- EVENT overall_header_navbar_before -->
-		<!-- INCLUDE navbar_header.html -->
 	</div>
+</div>
+<div id="wrap2">
+	<div id="main-menu" class="navigation">
+		<ul id="main-menu-links" class="links clearfix">
+			<li class="last">
+				<a id="foruminactive" class="forum" href="/portal/">Portal</a>
+			</li>
+			<li class="first last active">
+				<a class="active" href="index.php">Forum</a>
+			</li>
+		</ul>
+	</div>
+</div>
+<div id="wrap3">
+	<!-- EVENT overall_header_navbar_before -->
+	<!-- INCLUDE navbar_header.html -->
 
 	<!-- EVENT overall_header_page_body_before -->
 
