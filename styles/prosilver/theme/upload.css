@@ -1,0 +1,85 @@
+#komunikaty div.messages {
+    background-position: 8px 6px;
+    background-repeat: no-repeat;
+    border: 1px solid;
+    margin: 6px 0;
+    padding: 10px 10px 10px 50px;
+    text-align: left;
+}
+
+#komunikaty div.error {
+    background-image: url("../../../upload/wymagane/message-24-error.png");
+    border-color: #ED541D;
+    background-color: #FEF5F1;
+    color: #8C2E0B;
+}
+
+#komunikaty div.status {
+    background-color: #55e955;
+    background-image: url("../../../upload/wymagane/load.gif");
+    border: 1px solid #234600;
+    color: #234600;
+    background-position: 12px px;
+}
+
+#komunikaty div.status2 {
+    background-color: #55e955;
+    background-image: url("../../../upload/wymagane/message-24-ok.png");
+    border: 1px solid #234600;
+    color: #234600;
+    background-position: 12px 6px;
+}
+
+#trwawgrywanie  div.messages {
+    background-position: 8px 8px;
+    background-repeat: no-repeat;
+    margin: 6px 0;
+    padding: 10px 10px 10px 35px;
+}
+
+#trwawgrywanie  div.status{
+    background-color: #55e955;
+    border: 1px solid #234600;
+    color: #234600;
+    background-image: url("../../../upload/wymagane/load.gif");
+}
+
+#komrozdzielczosci {
+    width: 75%;
+    float: right;
+}
+
+#komrozdzielczosci div.messages {
+    background-position: 6px 3px;
+    background-repeat: no-repeat;
+    padding: 7px 7px 7px 35px;
+}
+
+#komrozdzielczosci  div.warning{
+    background-color: #FFFCE5;
+    border: 1px solid #EEDD55;
+    color: #884400;
+    background-image: url("../../../upload/wymagane/message-24-warning.png");
+}
+
+#zmianarozmiaru {
+    margin-top: 5px;
+}
+
+.akcjeplikow ul {
+    padding: 0px;
+}
+
+.akcjeplikow li {
+    margin-bottom: 7px;
+    list-style: none;
+}
+
+a.liteoption {
+    background-color: #FAFAFA;
+    cursor: pointer;
+    font-weight: normal;
+    text-indent: 2px;
+    color: #000000;
+    text-align: center;
+}
