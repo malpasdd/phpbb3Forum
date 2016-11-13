@@ -1,0 +1,24 @@
+{
+    "name": "sdd\/wgrywajka",
+    "type": "phpbb-extension",
+    "description": "",
+    "homepage": "http:\/\/podforak.pl",
+    "version": "1.0.0-dev",
+    "time": "2016-11-13",
+    "license": "GPL-2.0",
+    "authors": [{
+            "name": "SDD",
+            "email": "malpa447@gmail.com",
+            "homepage": "http:\/\/podforak.pl",
+            "role": ""
+        }],
+    "require": {
+        "php": ">=5.3.3"
+    },
+    "extra": {
+        "display-name": "Podforakowa wgrywajka",
+        "soft-require": {
+            "phpbb\/phpbb": ">=3.1.4,<3.2.0@dev"
+        }
+    }
+}

@@ -1,0 +1,3 @@
+sdd_wgrywajka_controller:
+    path: /demo/{name}
+    defaults: { _controller: sdd.wgrywajka.controller:handle }
