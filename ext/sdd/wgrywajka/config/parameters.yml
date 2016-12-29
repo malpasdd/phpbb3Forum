@@ -1,2 +1,2 @@
 parameters:
-    sdd.wgrywajka.tables.demo_table: '%core.table_prefix%demo_table'
+    sdd.wgrywajka.tables.podforak_upload: 'phpbb_podforak_upload'

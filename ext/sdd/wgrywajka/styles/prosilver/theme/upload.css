@@ -8,7 +8,7 @@
 }
 
 #komunikaty div.error {
-    background-image: url(upload/wymagane/message-24-error.png);
+    background-image: url(./images/message-24-error.png);
     border-color: #ED541D;
     background-color: #FEF5F1;
     color: #8C2E0B;
@@ -16,15 +16,15 @@
 
 #komunikaty div.status {
     background-color: #55e955;
-    background-image: url(upload/wymagane/load.gif);
+    background-image: url(./images/load.gif);
     border: 1px solid #234600;
     color: #234600;
-    background-position: 12px px;
+    background-position: 12px;
 }
 
 #komunikaty div.status2 {
     background-color: #55e955;
-    background-image: url(upload/wymagane/message-24-ok.png);
+    background-image: url(./images/message-24-ok.png);
     border: 1px solid #234600;
     color: #234600;
     background-position: 12px 6px;
@@ -41,7 +41,7 @@
     background-color: #55e955;
     border: 1px solid #234600;
     color: #234600;
-    background-image: url(upload/wymagane/load.gif);
+    background-image: url(./images/load.gif);
 }
 
 #komrozdzielczosci {
@@ -59,7 +59,7 @@
     background-color: #FFFCE5;
     border: 1px solid #EEDD55;
     color: #884400;
-    background-image: url(upload/wymagane/message-24-warning.png);
+    background-image: url(./images/message-24-warning.png);
 }
 
 #zmianarozmiaru {

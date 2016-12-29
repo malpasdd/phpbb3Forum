@@ -19,12 +19,12 @@ class main_info
 	{
 		return array(
 			'filename'	=> '\sdd\wgrywajka\acp\main_module',
-			'title'		=> 'ACP_DEMO_TITLE',
+			'title'		=> 'ACP_WGRYWAJKA_TITLE',
 			'modes'		=> array(
 				'settings'	=> array(
-					'title'	=> 'ACP_DEMO',
+					'title'	=> 'ACP_WGRYWAJKA',
 					'auth'	=> 'ext_sdd/wgrywajka && acl_a_board',
-					'cat'	=> array('ACP_DEMO_TITLE')
+					'cat'	=> array('ACP_WGRYWAJKA_TITLE')
 				),
 			),
 		);

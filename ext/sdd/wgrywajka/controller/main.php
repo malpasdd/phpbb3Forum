@@ -76,7 +76,7 @@ class main {
      * @return \Symfony\Component\HttpFoundation\Response A Symfony Response object
      */
     public function handle($name) {
-        $l_message = !$this->config['acme_demo_goodbye'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
+        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
         $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
 
         return $this->helper->render('demo_body.html', $name);
@@ -101,7 +101,7 @@ class main {
 
     public function zaawansowane() {
         $name = "zaawansowane";
-        $l_message = !$this->config['acme_demo_goodbye'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
+        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
         $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
 
         return $this->helper->render('demo_body.html', $name);
@@ -177,7 +177,7 @@ class main {
 
     public function mojepliki() {
         $name = "mojepliki";
-        $l_message = !$this->config['acme_demo_goodbye'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
+        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
         $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
 
         return $this->helper->render('demo_body.html', $name);
@@ -185,7 +185,7 @@ class main {
 
     public function szukaj() {
         $name = "mojepliki";
-        $l_message = !$this->config['acme_demo_goodbye'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
+        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
         $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
 
         return $this->helper->render('demo_body.html', $name);
