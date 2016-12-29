@@ -1,3 +1,19 @@
 sdd_wgrywajka_controller:
-    path: /demo/{name}
-    defaults: { _controller: sdd.wgrywajka.controller:handle }
+    pattern: /wgrywajka/proste
+    defaults: { _controller: sdd.wgrywajka.controller:proste }
+
+sdd_wgrywajka_zaawansowane:
+    pattern: /wgrywajka/zaawansowane
+    defaults: { _controller: sdd.wgrywajka.controller:zaawansowane }
+
+sdd_wgrywajka_wynik:
+    pattern: /wgrywajka/wynik
+    defaults: { _controller: sdd.wgrywajka.controller:wynik }
+
+sdd_wgrywajka_mojepliki:
+    pattern: /wgrywajka/mojepliki
+    defaults: { _controller: sdd.wgrywajka.controller:mojepliki }
+    
+sdd_wgrywajka_szukaj:
+    pattern: /wgrywajka/szukaj
+    defaults: { _controller: sdd.wgrywajka.controller:szukaj }

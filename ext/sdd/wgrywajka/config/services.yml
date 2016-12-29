@@ -9,17 +9,6 @@ services:
             - '@controller.helper'
             - '@template'
             - '@user'
-
-    sdd.wgrywajka.service:
-        class: sdd\wgrywajka\service
-        arguments:
-            - '@user'
-            - '%sdd.wgrywajka.tables.demo_table%'
-
-    sdd.wgrywajka.listener:
-        class: sdd\wgrywajka\event\main_listener
-        arguments:
-            - '@controller.helper'
-            - '@template'
-        tags:
-            - { name: event.listener }
+            - '@request'
+            - '@dbal.conn'
+            - '@auth'

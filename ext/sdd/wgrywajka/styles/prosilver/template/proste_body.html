@@ -1,0 +1,75 @@
+<!-- INCLUDE overall_header.html -->
+<!-- BEGIN intro -->
+
+<script type="text/javascript">
+    function insert() {
+    var dozwolnePliki = [{intro.dozowlone_pliki}];
+    var rozmiar = {intro.max_rozmiar};
+    return walidacjaPlikuProste(document.getElementById('plik'), rozmiar, dozwolnePliki);
+    }
+</script>
+
+<div id="komunikaty"></div>
+<form action="./wynik" method="POST" ENCTYPE="multipart/form-data" id="wgrajform" onSubmit="return insert();">
+    <table cellspacing="1" cellpading="0" class="forumline" align="center"  width="100%" style="margin-top: 0px;">
+        <tr>
+            <th style="padding-left: 7px;" width="100%" colspan="2">
+                Wgrywanie proste
+            </th>
+        </tr>
+        <tr>
+            <td class="row1" style="padding: 7px; width: 22%;"><b> Wybierz plik z dysku:</b></td>
+            <td class="row2"  style="padding: 20px 10px; width: 78%;">
+                <div id="trwawgrywanie">
+                </div>
+                <input type="file" id="plik" name="plik" class="post" onclick="wyczyscKomunikaty();"/><br />
+            </td>
+        </tr>
+        <tr>
+            <td class="row1" style="padding: 7px;"><b> Dozwolone pliki:</b></td>
+            <td class="row2" style="padding: 7px;">{intro.dozowlone_pliki_label}</td>
+        </tr>
+        <tr>
+            <td class="row1" style="padding: 7px;"><b>Max rozmiar pliku:</b></td>
+            <td class="row2" style="padding: 7px;">{intro.max_rozmiar_label} MB</td>
+        </tr>
+        <tr>
+            <td class="catBottom" align="center" colspan="2">
+                <input type="hidden" name="level" value="1">
+                <input type="submit" class="liteoption" value="Wgraj plik"/> 
+            </td>
+        </tr>
+    </table>
+</form>
+
+<table cellspacing="1" class="forumline" align="center" width="100%" style="margin-top: 30px; text-align: center;">
+    <tr>
+        <th width="100%" nowrap="nowrap" colspan="6">Opcje</th>
+    </tr>
+    <tr>
+        <td class="row1" width="20%" style="padding: 8px;">
+            <a class="forumlink" href="./proste">Wgrywanie proste</a>
+        </td>
+        <td class="row1" width="20%" style="padding: 8px;">
+            <a class="forumlink" href="./zaawansowane">Wgrywanie zaawansowane</a>
+        </td>
+        <td class="row1" width="20%" style="padding: 8px;">
+            <a class="forumlink" href="./mojepliki">Moje pliki</a>
+        </td>
+        <td class="row1" width="20%" style="padding: 8px;">
+            <a class="forumlink" href="./szukaj">Szukaj</a>
+        </td>
+        <td class="row1" width="20%" style="padding: 8px;">
+            <a class="forumlink" href="http://podforak.rzeszow.pl/viewtopic.php?t=4446">Pomoc</a>
+        </td>
+        {intro.admin}
+    </tr>
+</table>
+<div align="center"><br /><br />
+    <span class="copyright">
+        Skrypt opracował <a href="http://podforak.rzeszow.pl/profile.php?mode=viewprofile&u=88" target="_blank">SDD</a>
+    </span>
+</div>
+<!-- END intro -->
+<!-- INCLUDE jumpbox.html -->
+<!-- INCLUDE overall_footer.html -->

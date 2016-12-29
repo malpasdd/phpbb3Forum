@@ -1,0 +1,64 @@
+<!-- INCLUDE overall_header.html -->
+<!-- BEGIN intro -->
+<script language="JavaScript" type="text/javascript" src="upload.js"></script>
+<link href="./styles/prosilver/theme/upload.css?assets_version={T_ASSETS_VERSION}" rel="stylesheet">
+<table width="100%" cellspacing="2" border="0" align="center" cellpadding="2">
+  <tr> 
+	<td align="right" valign="top" nowrap="nowrap">
+		<div class="pagination">
+			{TOTAL_FILES}
+			<!-- IF .pagination -->
+				<!-- INCLUDE pagination.html -->
+			<!-- ELSE -->
+				&bull; {PAGE_NUMBER}
+			<!-- ENDIF -->
+		</div>
+	</td>
+  </tr>
+</table>
+{intro.content}
+<table width="100%" cellspacing="2" border="0" align="center" cellpadding="2">
+  <tr> 
+	<td align="right" valign="top" nowrap="nowrap">
+		<div class="pagination">
+			{TOTAL_FILES}
+			<!-- IF .pagination -->
+				<!-- INCLUDE pagination.html -->
+			<!-- ELSE -->
+				&bull; {PAGE_NUMBER}
+			<!-- ENDIF -->
+		</div>
+	</td>
+  </tr>
+</table>
+<table cellspacing="1" class="forumline" align="center" width="100%" style="margin-top: 30px; text-align: center;">
+	<tr>
+		<th width="100%" nowrap="nowrap" colspan="6">Opcje</th>
+	</tr>
+	<tr>
+		<td class="row1" width="20%" style="padding: 8px;">
+			<a class="forumlink" href="upload.php">Wgrywanie proste</a>
+		</td>
+		<td class="row1" width="20%" style="padding: 8px;">
+			<a class="forumlink" href="upload.php?action=zaawansowane">Wgrywanie zaawansowane</a>
+		</td>
+		<td class="row1" width="20%" style="padding: 8px;">
+			<a class="forumlink" href="upload.php?action=mojepliki">Moje pliki</a>
+		</td>
+		<td class="row1" width="20%" style="padding: 8px;">
+			<a class="forumlink" href="upload.php?action=szukaj">Szukaj</a>
+		</td>
+		<td class="row1" width="20%" style="padding: 8px;">
+			<a class="forumlink" href="http://podforak.rzeszow.pl/viewtopic.php?t=4446">Pomoc</a>
+		</td>
+		{intro.admin}
+	</tr>
+</table>
+<div align="center"><br /><br />
+	<span class="copyright">
+		Skrypt opracowa³ <a href="http://podforak.rzeszow.pl/profile.php?mode=viewprofile&u=88" target="_blank">SDD</a>
+	</span>
+</div>
+<!-- END intro -->
+<!-- INCLUDE jumpbox.html -->
+<!-- INCLUDE overall_footer.html -->
