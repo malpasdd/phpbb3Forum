@@ -104,11 +104,16 @@ class main {
     }
 
     public function zaawansowane() {
-        $name = "zaawansowane";
-        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
-        $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
+        page_header('Wgrywanie zaawansowane');
 
-        return $this->helper->render('demo_body.html', $name);
+        $this->template->assign_block_vars('intro', array(
+            'dozowlone_pliki' => $this->dozowlone_pliki,
+            'dozowlone_pliki_label' => $this->dozwolone_pliki(),
+            'max_rozmiar' => $this->max_rozmiar * 10,
+            'max_rozmiar_label' => round($this->max_rozmiar * 10 / 1048576, 2)
+        ));
+
+        return $this->helper->render('zaawansowane_body.html');
     }
 
     public function wynik() {
