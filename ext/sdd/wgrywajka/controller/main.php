@@ -45,6 +45,9 @@ class main {
     /* dozwolone rozszerzenia plików */
     private $dozowlone_pliki;
 
+    /** @var string phpBB root path */
+    protected $root_path;
+
     /**
      * Constructor
      *
@@ -56,7 +59,7 @@ class main {
      * @param \phpbb\db\driver\driver_interface    $db
      * @param \phpbb\auth\auth                     $auth
      */
-    public function __construct(\phpbb\config\config $config, \phpbb\controller\helper $helper, \phpbb\template\template $template, \phpbb\user $user, \phpbb\request\request $request, \phpbb\db\driver\driver_interface $db, \phpbb\auth\auth $auth) {
+    public function __construct(\phpbb\config\config $config, \phpbb\controller\helper $helper, \phpbb\template\template $template, \phpbb\user $user, \phpbb\request\request $request, \phpbb\db\driver\driver_interface $db, \phpbb\auth\auth $auth, $root_path) {
         $this->config = $config;
         $this->helper = $helper;
         $this->template = $template;
@@ -64,6 +67,7 @@ class main {
         $this->request = $request;
         $this->db = $db;
         $this->auth = $auth;
+        $this->root_path = $root_path;
         $this->max_rozmiar = 1024 * 1024;
         $this->dozowlone_pliki = '"png", "gif", "jpeg", "jpg", "pdf", "zip", "xls", "xlsx", "ppt", "pps", "pptx", "ppsx", "doc", "docx"';
     }
@@ -109,69 +113,65 @@ class main {
 
     public function wynik() {
         page_header('Wynik wgrywania');
-        $template_name = 'wynik_body.html';
-        $content = '';
-        $plik = $this->request->file('plik');
-
-        switch (request_var('level', 0)) {
-            case 1: {
-                    $content = 1;
-                    break;
-                }
-            case 2: {
-                    $content = 2;
-                    break;
-                }
-            default: {
-                    return blad_rozszerzenia();
-                }
-        }
-    }
-
-    /**
-     * wyniki wgrywania prostego
-     */
-    function wynik_prostego() {
 
         $plik = $this->request->file('plik');
+        $pictitle = $this->request->variable('pic_title', '');
+        $picdesc = $this->request->variable('pic_desc', '');
+        $zmianarozmiaru = $this->request->variable('zmianarozmiaru', 0);
+        $dodac = $this->request->variable('dodac', 1);
+        $miejsceznaku = $this->request->variable('miejsceznaku', 'pd');
+        $userdata = $this->user->data;
 
         if (is_uploaded_file($plik['tmp_name'])) {
             $nazwa = $plik['name'];
             $dodano = time();
-            if ($this->walidacja_rozszerzenia($nazwa)) {
+            if ($this->walidacja_rozszerzenia($plik['name'])) {
                 if ($this->is_obraz($nazwa)) {
-                    $nowa_nazwa = 'u' . $usdata['user_id'] . '_' . $dodano . '.' . pathinfo($nazwa, PATHINFO_EXTENSION);
-                    if ($this->zapisz_obraz($plik, 'upload/' . $nowa_nazwa, 1024, true, "pd")) {
-                        $nazwa_miniatury = 'upload/u' . $usdata['user_id'] . '_' . $dodano . '_thumb.jpg';
+                    $nowa_nazwa = 'u' . $userdata['user_id'] . '_' . $dodano . '.' . pathinfo($nazwa, PATHINFO_EXTENSION);
+                    if ($this->zapisz_obraz($plik, $this->root_path . 'upload/' . $nowa_nazwa, intval($zmianarozmiaru), intval($dodac), $miejsceznaku)) {
+                        $nazwa_miniatury = 'upload/u' . $userdata['user_id'] . '_' . $dodano . '_thumb.jpg';
 
-                        if ($this->utworz_miniature('upload/' . $nowa_nazwa, $nazwa_miniatury)) {
-                            if (!$this->dodaj_wpis_bazy($nowa_nazwa, $nazwa, '', $dodano, $nazwa_miniatury)) {
-                                return blad_ogolny();
-                            }
-                            return ekran_koncowy_wgrywania($nowa_nazwa, $nazwa_miniatury);
+                        if ($pictitle != '') {
+                            $opis = $pictitle;
                         } else {
-                            if (!dodaj_wpis_bazy($nowa_nazwa, $nazwa, '', $dodano, '')) {
-                                return blad_ogolny();
+                            $opis = $nazwa;
+                        }
+
+                        if ($this->utworz_miniature($this->root_path . 'upload/' . $nowa_nazwa, $this->root_path . $nazwa_miniatury)) {
+                            if (!$this->dodaj_wpis_bazy($nowa_nazwa, $opis, $picdesc, $dodano, $nazwa_miniatury)) {
+                                return $this->blad_ogolny();
+                            }
+                            return $this->ekran_koncowy_wgrywania($nowa_nazwa, $nazwa_miniatury);
+                        } else {
+                            if (!$this->dodaj_wpis_bazy($nowa_nazwa, $opis, $picdesc, $dodano, '')) {
+                                return $this->blad_ogolny();
                             }
 
-                            return ekran_koncowy_wgrywania($nowa_nazwa, '');
+                            return $this->ekran_koncowy_wgrywania($nowa_nazwa, '');
                         }
                     }
-                    return blad_ogolny_pliku();
+                    return $this->blad_ogolny_pliku();
                 } else {
+                    $nowa_nazwa = 'u' . $userdata['user_id'] . '_' . $dodano . '.' . pathinfo($nazwa, PATHINFO_EXTENSION);
+                    $this->przenies_plik_tmp($plik['tmp_name'], $nowa_nazwa);
 
-                    $nowa_nazwa = 'u' . $usdata['user_id'] . '_' . $dodano . '.' . pathinfo($nazwa, PATHINFO_EXTENSION);
-                    przenies_plik_tmp($plik['tmp_name'], $nowa_nazwa);
+                    if ($pictitle != '') {
+                        $opis = $pictitle;
+                    } else {
+                        $opis = $nazwa;
+                    }
 
-                    if (!dodaj_wpis_bazy($nowa_nazwa, $nazwa, '', $dodano, '')) {
+                    if (!$this->dodaj_wpis_bazy($nowa_nazwa, $opis, $picdesc, $dodano, '')) {
                         return blad_ogolny();
                     }
 
-                    return ekran_koncowy_wgrywania($nowa_nazwa, '');
+                    return $this->ekran_koncowy_wgrywania($nowa_nazwa, '');
                 }
             } else {
-                return blad_rozszerzenia();
+                return $this->blad_rozszerzenia();
             }
+        } else {
+            return $this->blad_ogolny();
         }
     }
 
@@ -265,7 +265,7 @@ class main {
      * @param unknown_type $nazwa_koncowa - nazwa pod ktora ma zostac zapisany plik
      */
     function przenies_plik_tmp($nazwa_tmp, $nazwa_koncowa) {
-        move_uploaded_file($nazwa_tmp, 'upload/' . $nazwa_koncowa);
+        move_uploaded_file($nazwa_tmp, $this->root_path . 'upload/' . $nazwa_koncowa);
     }
 
     /**
@@ -277,7 +277,7 @@ class main {
         $ext = pathinfo($nazwa, PATHINFO_EXTENSION);
         $rozszerzenia_obrazow = array('png', 'gif', 'jpeg', 'jpg');
 
-        return contains($ext, $rozszerzenia_obrazow);
+        return $this->contains($ext, $rozszerzenia_obrazow);
     }
 
     /**
@@ -289,12 +289,12 @@ class main {
      * @return boolean - flaga poprawnosci zapisu
      */
     function dodaj_wpis_bazy($nazwa_pliku, $tytul, $opis, $dodano, $miniatura) {
-        $sql = "INSERT INTO " . PODFORAK_UPLOAD_TABLE . " (miniatura, nazwa_pliku, tytul, opis, uid, dodany)
-				VALUES ('" . $miniatura . "', '" . $nazwa_pliku . "', '" . $tytul . "', '" . $opis . "', " . $this->user['user_id'] . ", " . $dodano . ")";
+        $sql = "INSERT INTO " . $this->PODFORAK_UPLOAD_TABLE . " (miniatura, nazwa_pliku, tytul, opis, uid, dodany)
+				VALUES ('" . $miniatura . "', '" . $nazwa_pliku . "', '" . $tytul . "', '" . $opis . "', " . $this->user->data['user_id'] . ", " . $dodano . ")";
 
         $result = $this->db->sql_query($sql);
 
-        return result;
+        return $result;
     }
 
     /**
@@ -342,7 +342,7 @@ class main {
                 imagecopyresampled($nowy_obrazek, $obraz_dyskowy, 0, 0, 0, 0, $nowaszerokosc, $nowawysokosc, $szerokosc, $wysokosc);
 
                 if ($znak_wodny) {
-                    $znaczek = "upload/wymagane/znakwodny.png";
+                    $znaczek = $this->root_path . "upload/wymagane/znakwodny.png";
                     $zmienna_znaku = imagecreatefrompng($znaczek);
                     list($szerokoscznaczka, $wysokoscznaczka) = getimagesize($znaczek);
 
@@ -544,6 +544,33 @@ class main {
         }
 
         return $filename;
+    }
+
+    /**
+     * ekran koncowy wgrywania
+     * @param unknown_type $nazwa_pliku - nazwa pliku
+     * @param unknown_type $nazwa_miniatury - nazwa miniatury (jesli istnieje)
+     */
+    function ekran_koncowy_wgrywania($nazwa_pliku, $nazwa_miniatury = '', $stara_wgrywajka = 0) {
+        $zawartosc = '';
+        $url = generate_board_url();
+        if ($stara_wgrywajka == 1) {
+            $url = 'http://podforak.rzeszow.pl/upload/';
+        }
+
+        if ($this->is_obraz($nazwa_pliku) && $nazwa_miniatury != '') {
+            $zawartosc .= '[URL=' . $url . '/upload/' . $nazwa_pliku . '][img]' . $url . '/' . $nazwa_miniatury . '[/img][/URL]';
+        } else if ($this->is_obraz($nazwa_pliku)) {
+            $zawartosc .= '[IMG]' . $url . '/upload/' . $nazwa_pliku . '[/img]';
+        } else {
+            $zawartosc .= $url . '/upload/' . $nazwa_pliku;
+        }
+
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $zawartosc
+        ));
+
+        return $this->helper->render('wynik_body.html');
     }
 
 }

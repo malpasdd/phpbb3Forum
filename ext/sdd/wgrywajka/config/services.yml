@@ -12,3 +12,4 @@ services:
             - '@request'
             - '@dbal.conn'
             - '@auth'
+            - %core.root_path%
