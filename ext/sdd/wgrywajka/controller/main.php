@@ -50,14 +50,15 @@ class main {
 
     /**
      * Constructor
-     *
-     * @param \phpbb\config\config                 $config
-     * @param \phpbb\controller\helper             $helper
-     * @param \phpbb\template\template             $template
-     * @param \phpbb\user                          $user
-     * @param \phpbb\request\request               $request
-     * @param \phpbb\db\driver\driver_interface    $db
-     * @param \phpbb\auth\auth                     $auth
+     * 
+     * @param \phpbb\config\config $config
+     * @param \phpbb\controller\helper $helper
+     * @param \phpbb\template\template $template
+     * @param \phpbb\user $user
+     * @param \phpbb\request\request $request
+     * @param \phpbb\db\driver\driver_interface $db
+     * @param \phpbb\auth\auth $auth
+     * @param type $root_path
      */
     public function __construct(\phpbb\config\config $config, \phpbb\controller\helper $helper, \phpbb\template\template $template, \phpbb\user $user, \phpbb\request\request $request, \phpbb\db\driver\driver_interface $db, \phpbb\auth\auth $auth, $root_path) {
         $this->config = $config;
@@ -70,20 +71,6 @@ class main {
         $this->root_path = $root_path;
         $this->max_rozmiar = 1024 * 1024;
         $this->dozowlone_pliki = '"png", "gif", "jpeg", "jpg", "pdf", "zip", "xls", "xlsx", "ppt", "pps", "pptx", "ppsx", "doc", "docx"';
-    }
-
-    /**
-     * Demo controller for route /demo/{name}
-     *
-     * @param string $name
-     *
-     * @return \Symfony\Component\HttpFoundation\Response A Symfony Response object
-     */
-    public function handle($name) {
-        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
-        $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
-
-        return $this->helper->render('demo_body.html', $name);
     }
 
     /**
@@ -114,6 +101,90 @@ class main {
         ));
 
         return $this->helper->render('zaawansowane_body.html');
+    }
+
+    public function mojepliki() {
+        page_header('Moje pliki');
+        $start = request_var('start', 0);
+
+        return $this->pliki_usera($this->user->data['user_id'], $start, 'mojepliki');
+    }
+
+    public function szukaj() {
+        $name = "mojepliki";
+        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
+        $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
+
+        return $this->helper->render('demo_body.html', $name);
+    }
+
+    function pliki_usera($uid, $start, $base_url) {
+        global $phpbb_container;
+        $edycja = false;
+        $per_page = 20;
+        $zawartosc = '';
+
+        $usdata = $this->user->data;
+
+        if ($uid == $usdata['user_id']) {
+            $edycja = true;
+        }
+
+        $pliki_usera = $this->pobierz_wpisy_usera($uid);
+        $total_match_count = count($pliki_usera);
+        $index = $start + 1;
+
+        $end = $start + $per_page;
+        if ($end > count($pliki_usera)) {
+            $end = count($pliki_usera);
+        }
+
+        if ($uid == $usdata['user_id']) {
+            $edycja = true;
+        }
+
+        for ($i = $start; $i < $end; $i++) {
+            $zawartosc .= $this->lista_plikow_wiersz($pliki_usera[$i], $index, $edycja);
+            $index++;
+        }
+
+        $this->template->set_filenames(array(
+            'body' => 'pliki_usera_body.html')
+        );
+
+        $this->template->assign_block_vars('intro', array(
+            'dodane_przez' => $usdata['username'],
+            'content' => $zawartosc,
+        ));
+
+        $pagination = $phpbb_container->get('pagination');
+        $pagination->generate_template_pagination($base_url, 'pagination', 'start', $total_match_count, $per_page, $start);
+
+        $this->template->assign_vars(array(
+            'PAGE_NUMBER' => $pagination->on_page($total_match_count, $per_page, $start),
+            'TOTAL_FILES' => $total_match_count,
+        ));
+
+        return $this->helper->render('pliki_usera_body.html');
+    }
+
+    /**
+     * pobiera wpisy z tabeli plikow uzytkownika
+     * @global type $db
+     * @param type $uid
+     * @return string
+     */
+    function pobierz_wpisy_usera($uid) {
+        $pliki_usera = array();
+        $sql = "SELECT * FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE uid = " . $uid . " ORDER BY dodany DESC";
+        if (!($result = $this->db->sql_query($sql))) {
+            return '<tr><td class="row1" align="center" colspan="4">Brak wynik&#243;w</td></tr>';
+        } else {
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $pliki_usera[] = $row;
+            }
+            return $pliki_usera;
+        }
     }
 
     public function wynik() {
@@ -178,22 +249,6 @@ class main {
         } else {
             return $this->blad_ogolny();
         }
-    }
-
-    public function mojepliki() {
-        $name = "mojepliki";
-        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
-        $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
-
-        return $this->helper->render('demo_body.html', $name);
-    }
-
-    public function szukaj() {
-        $name = "mojepliki";
-        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
-        $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
-
-        return $this->helper->render('demo_body.html', $name);
     }
 
     private function dozwolone_pliki() {
@@ -560,7 +615,7 @@ class main {
         $zawartosc = '';
         $url = generate_board_url();
         if ($stara_wgrywajka == 1) {
-            $url = 'http://podforak.rzeszow.pl/upload/';
+            $url = 'http://podforak.rzeszow.pl';
         }
 
         if ($this->is_obraz($nazwa_pliku) && $nazwa_miniatury != '') {
@@ -576,6 +631,100 @@ class main {
         ));
 
         return $this->helper->render('wynik_body.html');
+    }
+
+    /**
+     * dodaje wiersz listy plikow
+     * @param type $plik
+     * @param type $index
+     * @param type $zarzadzanie
+     * @return string
+     */
+    function lista_plikow_wiersz($plik, $index, $zarzadzanie = false, $kto_dodal = false) {
+
+        $zawartosc = "";
+        $style = "";
+        if ($plik['prywatny'] == 1) {
+            $style = "background: #CCCCCC;";
+        }
+        $zawartosc .= '<tr><td class="row1" width="" style="padding: 4px;' . $style . '">' . $index . '</td>';
+        $zawartosc .= '<td class="row1" width="25%" style="padding: 4px;' . $style . '">';
+
+        $url = generate_board_url();
+        if ($plik['stara_wgrywajka'] == 1) {
+            $url = 'http://podforak.rzeszow.pl';
+        }
+
+        if ($plik['miniatura'] != '') {
+            $zawartosc .= '<a href="' . $url . '/upload/' . $plik['nazwa_pliku'] . '" target="_blank"><img src="' . $url . '/' . $plik['miniatura'] . '" style="width: 233px;"/></a>';
+        } else {
+            $tytul = $plik['nazwa_pliku'];
+            if ($plik['tytul'] != '') {
+                $tytul = $plik['tytul'];
+            }
+            $zawartosc .= '<a href="' . $url . '/upload/' . $plik['nazwa_pliku'] . '" target="_blank">' . $tytul . '</a>';
+        }
+
+        $zawartosc .= '</td>';
+        $zawartosc .= '<td class="row2" width="45%" style="padding: 4px;' . $style . '">' . $plik['opis'] . '</td><td class="row1" width="15%" style="padding: 4px; text-align: center;' . $style . '">' . date('d-m-Y h:i', $plik['dodany']);
+
+        if ($kto_dodal) {
+            $nazwa_usera = $this->pobierz_pokolorowana_nazwe($plik['uid']);
+            if ($nazwa_usera != "") {
+                $zawartosc .= '<br />przez: ';
+                $zawartosc .= $nazwa_usera;
+            }
+        }
+
+        $zawartosc .= '</td>';
+
+        $zawartosc .= '<td class="row2 akcjeplikow" width="15%" style="padding: 4px;' . $style . '"><ul>'
+                . '<li><a href="upload.php?action=szukaj&fid=' . $plik['id'] . '">Znajd&#378; posty z plikiem</a></li>';
+        $zawartosc .= '<li><a href="upload.php?fid=' . $plik['id'] . '" target="_blank">Pobierz kod na forum</a></li>';
+        if ($zarzadzanie) {
+//            $zawartosc .= '<li><a href="upload.php?fid=' . $plik['id'] . '">Pobierz kod na forum</a></li>';
+            if (request_var('start', 0) > 0) {
+                $str = "&start=" . request_var('start', 0);
+            } else {
+                $str = "";
+            }
+            if ($plik['prywatny'] == 0) {
+                $zawartosc .= '<li><a href="upload.php?action=prywatny&fid=' . $plik['id'] . '&status=1' . $str . '">Oznacz jako prywatny</a></li>';
+            } else {
+                $zawartosc .= '<li><a href="upload.php?action=prywatny&fid=' . $plik['id'] . '&status=0' . $str . '">Oznacz jako publiczny</a></li>';
+            }
+            $zawartosc .= '<li><a href="upload.php?action=usun&fid=' . $plik['id'] . '' . $str . '">Usu&#324; plik</a></li>';
+        }
+        $zawartosc .= '</ul></td></tr>';
+
+        return $zawartosc;
+    }
+
+    /**
+     * Pobiera pokolorowana nazwe uzytkownika
+     * @global type $db
+     * @param type $uid
+     * @return string
+     */
+    function pobierz_pokolorowana_nazwe($uid) {
+        $zawartosc = "";
+
+        $sql = "SELECT u.user_id, u.username, u.user_colour FROM podf3_users u WHERE u.user_id = $uid";
+        if ($result = $this->db->sql_query($sql)) {
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $style = 'class="username"';
+                if (trim($row['user_colour']) != '') {
+                    $style = 'class="username-coloured" style="color: #' . $row['user_colour'] . ';"';
+                }
+                if ($colored_username != 'Anonymous') {
+                    $zawartosc = '<a ' . $style . ' href="memberlist.php?mode=viewprofile&u=' . $row['user_id'] . '">'
+                            . $row['username'] .
+                            '</a>';
+                }
+            }
+        }
+
+        return $zawartosc;
     }
 
 }

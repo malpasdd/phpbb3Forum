@@ -13,6 +13,9 @@ sdd_wgrywajka_wynik:
 sdd_wgrywajka_mojepliki:
     pattern: /wgrywajka/mojepliki
     defaults: { _controller: sdd.wgrywajka.controller:mojepliki }
+#    defaults: { _controller: sdd.wgrywajka.controller:mojepliki, start: 0 }
+#    requirements:
+#        start: \d*
     
 sdd_wgrywajka_szukaj:
     pattern: /wgrywajka/szukaj
