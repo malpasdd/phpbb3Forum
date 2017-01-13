@@ -13,10 +13,15 @@ sdd_wgrywajka_wynik:
 sdd_wgrywajka_mojepliki:
     pattern: /wgrywajka/mojepliki
     defaults: { _controller: sdd.wgrywajka.controller:mojepliki }
-#    defaults: { _controller: sdd.wgrywajka.controller:mojepliki, start: 0 }
-#    requirements:
-#        start: \d*
-    
-sdd_wgrywajka_szukaj:
-    pattern: /wgrywajka/szukaj
-    defaults: { _controller: sdd.wgrywajka.controller:szukaj }
+
+sdd_wgrywajka_szukaj_pliki_usera:
+    pattern: /wgrywajka/user
+    defaults: { _controller: sdd.wgrywajka.controller:szukaj_pliki_usera }
+
+sdd_wgrywajka_szukaj_posty_z_plikiem:
+    pattern: /wgrywajka/plik
+    defaults: { _controller: sdd.wgrywajka.controller:szukaj_posty_z_plikiem }
+
+#sdd_wgrywajka_szukaj:
+#    pattern: /wgrywajka/szukaj
+#    defaults: { _controller: sdd.wgrywajka.controller:szukaj }

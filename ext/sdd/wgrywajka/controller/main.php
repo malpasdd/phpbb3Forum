@@ -105,20 +105,213 @@ class main {
 
     public function mojepliki() {
         page_header('Moje pliki');
-        $start = request_var('start', 0);
+        $start = $this->request->variable('start', 0);
 
         return $this->pliki_usera($this->user->data['user_id'], $start, 'mojepliki');
     }
 
     public function szukaj() {
-        $name = "mojepliki";
-        $l_message = !$this->config['sdd_wgrywajka_wlaczona'] ? 'DEMO_HELLO' : 'DEMO_GOODBYE';
-        $this->template->assign_var('DEMO_MESSAGE', $this->user->lang($l_message, $name));
+        page_header('Wgrywanie zaawansowane');
 
-        return $this->helper->render('demo_body.html', $name);
+        $this->template->assign_block_vars('intro', array(
+        ));
+
+        return $this->helper->render('szukaj_body.html');
     }
 
-    function pliki_usera($uid, $start, $base_url) {
+    public function szukaj_pliki_usera() {
+        page_header('Pliki użytkownika');
+        $start = $this->request->variable('start', 0);
+        $uid = $this->request->variable('uid', 0);
+
+        return $this->pliki_usera($uid, $start, 'user?uid=' . $uid);
+    }
+
+    public function szukaj_posty_z_plikiem() {
+        page_header('Posty z plikiem');
+
+        $fid = $this->request->variable('fid', 0);
+
+        return $this->wyszukiwanie_postow_id($fid);
+    }
+
+    private function pobierz_pliki_nazwa($filename, $start) {
+
+        $pliki = array();
+        $edycja = false;
+        $zawartosc = "";
+
+        $filename = str_replace('*', '%', $filename);
+        $sql = "SELECT * FROM " . PODFORAK_UPLOAD_TABLE . " WHERE nazwa_pliku LIKE '$filename' OR tytul LIKE '$filename' ORDER BY dodany DESC";
+
+        if (!($result = $db->sql_query($sql))) {
+            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+        }
+
+        while ($row = $db->sql_fetchrow($result)) {
+            $pliki[] = $row;
+        }
+
+        if (isset($filename)) {
+            $zawartosc = '<br /><span class="maintitle">Wyniki dla: ' . str_replace("%", "*", $filename) . '</span>';
+        }
+
+        $total_match_count = count($pliki);
+        $index = $start + 1;
+
+        $end = $start + $per_page;
+        if ($end > count($pliki)) {
+            $end = count($pliki);
+        }
+
+        for ($i = $start; $i < $end; $i++) {
+            $zawartosc .= lista_plikow_wiersz($pliki[$i], $index, $edycja, true);
+            $index++;
+        }
+
+        return $zawartosc;
+    }
+
+    /**
+     * wyszukiwnanie postow z z plikiem o zadanym id
+     * @global type $userdata
+     * @global type $db
+     * @global type $tree
+     * @param type $plik_id
+     * @return string
+     */
+    private function wyszukiwanie_postow_id($plik_id) {
+
+        $userdata = $this->user->data;
+        $nazwa_pliku = NULL;
+        $prywatny = NULL;
+        $zawartosc = '';
+        $sql = "SELECT nazwa_pliku, uid, prywatny FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $plik_id  ORDER BY dodany DESC";
+
+        if (!($result = $this->db->sql_query($sql))) {
+            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+        }
+
+        while ($row = $this->db->sql_fetchrow($result)) {
+            $nazwa_pliku = $row['nazwa_pliku'];
+            $uid = $row['uid'];
+            $prywatny = $row['prywatny'];
+        }
+
+        if ($prywatny == 0 || $userdata['user_id'] == $uid) {
+            if (isset($nazwa_pliku) && $nazwa_pliku != "") {
+                $sql = "SELECT ps.post_id, t.topic_title , u.user_id, u.user_posts, ps.post_subject, ps.topic_id, ps.post_username, u.username, ps.forum_id, f.forum_name, u.user_colour, u.user_id
+            FROM podf3_posts ps
+            LEFT JOIN podf3_users u ON u.user_id  = ps.poster_id
+            LEFT JOIN podf3_topics t ON t.topic_id = ps.topic_id
+            LEFT JOIN podf3_forums f ON f.forum_id = ps.forum_id
+            WHERE ps.post_text LIKE '%" . $this->przygotuj_nazwe_pliku($nazwa_pliku) . "%'";
+
+//            var_dump($sql);
+
+                if (!($result = $this->db->sql_query($sql))) {
+                    message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+                }
+
+                $i = 0;
+                while ($row = $this->db->sql_fetchrow($result)) {
+
+                    if ($this->auth->acl_get('f_read', $row['forum_id']) || $this->auth->acl_gets('a_', 'm_')) {
+
+                        $forum_style = "";
+                        $temat_style = "";
+//                    $colored_username = color_username($row['user_level'], $row['user_jr'], $row['user_id'], $row['username']);
+                        $colored_username = $this->pobierz_pokolorowana_nazwe($row['user_id']);
+                        if (isset($row['forum_color']) && $row['forum_color'] != '') {
+                            $forum_style = 'style="color: #' . $row['forum_color'] . ';"';
+                        }
+                        if (isset($row['topic_color']) && $row['topic_color'] != '') {
+                            $temat_style = 'style="color: ' . $row['topic_color'] . ';"';
+                        }
+
+                        $zawartosc .= $this->wiersz_wyszukiwania_listy_postow($row, $forum_style, $temat_style, $colored_username);
+
+                        $i++;
+                    }
+                }
+                if ($i == 0) {
+                    $zawartosc .= $this->wyszukiwanie_postow_id_brak_wynikow();
+                }
+            } else {
+                $zawartosc .= $this->wyszukiwanie_postow_id_brak_wynikow();
+            }
+        } else {
+            $zawartosc .= '<tr><td class="row1" style="padding: 7px;" width="100%" colspan="3">
+                                Plik jest prywatny.
+                        </td></tr>';
+        }
+
+        $this->template->assign_block_vars('intro', array(
+            'naglowek' => 'Wyniki',
+            'content' => $zawartosc,
+        ));
+
+        return $this->helper->render('szukaj_wyniki_body.html');
+    }
+
+    /**
+     * wiersz listy postow zawierajacych obrazek
+     * @param type $row
+     * @param type $forum_style
+     * @param type $temat_style
+     * @param type $colored_username
+     * @return string
+     */
+    function wiersz_wyszukiwania_listy_postow($row, $forum_style, $temat_style, $colored_username) {
+        $zawartosc = '<tr><td class="row1" style="padding: 7px;">
+                                <a class="forumtitle" ' . $forum_style . ' href="viewforum.php?f=' . $row['forum_id'] . '">'
+                . $row['forum_name'] .
+                '</a></td>
+                                <td class="row1" style="padding: 7px;">
+                                    <a class="topictitle" ' . $temat_style . ' href="viewtopic.php?p=' . $row['post_id'] . '#p' . $row['post_id'] . '">'
+                . $row['topic_title'] .
+                '</a></td>
+                                <td class="row1" style="padding: 7px;">';
+        if ($row['post_username'] != "") {
+            $zawartosc .= $row['post_username'];
+        } else {
+            $zawartosc .= $colored_username;
+        }
+
+        $zawartosc .= '</td>
+                    </tr>';
+
+        return $zawartosc;
+    }
+
+    private function przygotuj_nazwe_pliku($nazwa_pliku) {
+
+        $nazwa_pliku = str_replace(".", "%", 'upload/' . $nazwa_pliku);
+        return $nazwa_pliku;
+    }
+
+    /**
+     * zwraca wiersz braku wynikow
+     * @return string
+     */
+    function wyszukiwanie_postow_id_brak_wynikow() {
+        $zawartosc = '<tr><td class="row1" style="padding: 7px;" width="100%" colspan="3">
+                        Brak post&#243;w spe&#322;niaj&#261;cych kryteria.
+                </td></tr>';
+
+        return $zawartosc;
+    }
+
+    /**
+     * zwraca zawartosc strony plikow zadanego usera
+     * @global type $userdata
+     * @global type $per_page
+     * @global type $total_match_count
+     * @param type $uid
+     * @param type $start
+     * @return type
+     */
+    private function pliki_usera($uid, $start, $base_url) {
         global $phpbb_container;
         $edycja = false;
         $per_page = 20;
@@ -153,7 +346,7 @@ class main {
         );
 
         $this->template->assign_block_vars('intro', array(
-            'dodane_przez' => $usdata['username'],
+            'naglowek' => 'Pliki dodane przez ' . $this->pobierz_pokolorowana_nazwe($uid),
             'content' => $zawartosc,
         ));
 
@@ -174,7 +367,7 @@ class main {
      * @param type $uid
      * @return string
      */
-    function pobierz_wpisy_usera($uid) {
+    private function pobierz_wpisy_usera($uid) {
         $pliki_usera = array();
         $sql = "SELECT * FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE uid = " . $uid . " ORDER BY dodany DESC";
         if (!($result = $this->db->sql_query($sql))) {
@@ -187,6 +380,10 @@ class main {
         }
     }
 
+    /**
+     * Wynik wgrywania
+     * @return type
+     */
     public function wynik() {
         page_header('Wynik wgrywania');
 
@@ -261,7 +458,7 @@ class main {
      * lub ktos probowal go oszukac
      * @param unknown_type $nazwa - nazwa pliku
      */
-    function walidacja_rozszerzenia($nazwa) {
+    private function walidacja_rozszerzenia($nazwa) {
         $rozszerzenia = explode(',', str_replace('"', '', $this->dozowlone_pliki));
         $ext = pathinfo($nazwa, PATHINFO_EXTENSION);
 
@@ -274,7 +471,7 @@ class main {
      * @param array $arr - array
      * @return boolean
      */
-    function contains($str, array $arr) {
+    private function contains($str, array $arr) {
         foreach ($arr as $a) {
             if (stripos(strtolower(trim($str)), strtolower(trim($a))) !== false) {
                 return true;
@@ -287,7 +484,7 @@ class main {
      * blad zabronionego rozszerzenia pliku
      * @return string
      */
-    function blad_rozszerzenia() {
+    private function blad_rozszerzenia() {
         $this->template->assign_block_vars('intro', array(
             'wynik' => '<div class="messages error"> Wybrano niedozwolony typ pliku!</div>'
         ));
@@ -299,7 +496,7 @@ class main {
      * blad ogolny zapisu do bazy
      * @return string
      */
-    function blad_ogolny() {
+    private function blad_ogolny() {
         $this->template->assign_block_vars('intro', array(
             'wynik' => '<div class="messages error"> B&#322;&#261;d og&#243;lny tworzenia nowego wpisu do bazy!</div>'
         ));
@@ -311,7 +508,7 @@ class main {
      * blad ogolny zapisu pliku
      * @return string
      */
-    function blad_ogolny_pliku() {
+    private function blad_ogolny_pliku() {
         $this->template->assign_block_vars('intro', array(
             'wynik' => '<div class="messages error"> B&#322;&#261;d og&#243;lny zapisu pliku!</div>'
         ));
@@ -324,7 +521,7 @@ class main {
      * @param unknown_type $nazwa_tmp - nazwa pliku tmp
      * @param unknown_type $nazwa_koncowa - nazwa pod ktora ma zostac zapisany plik
      */
-    function przenies_plik_tmp($nazwa_tmp, $nazwa_koncowa) {
+    private function przenies_plik_tmp($nazwa_tmp, $nazwa_koncowa) {
         move_uploaded_file($nazwa_tmp, $this->root_path . 'upload/' . $nazwa_koncowa);
     }
 
@@ -333,7 +530,7 @@ class main {
      * @param unknown_type $nazwa
      * @return boolean
      */
-    function is_obraz($nazwa) {
+    private function is_obraz($nazwa) {
         $ext = pathinfo($nazwa, PATHINFO_EXTENSION);
         $rozszerzenia_obrazow = array('png', 'gif', 'jpeg', 'jpg');
 
@@ -348,7 +545,7 @@ class main {
      * @param unknown_type $dodano - zrzut daty dodania
      * @return boolean - flaga poprawnosci zapisu
      */
-    function dodaj_wpis_bazy($nazwa_pliku, $tytul, $opis, $dodano, $miniatura) {
+    private function dodaj_wpis_bazy($nazwa_pliku, $tytul, $opis, $dodano, $miniatura) {
         $sql = "INSERT INTO " . $this->PODFORAK_UPLOAD_TABLE . " (miniatura, nazwa_pliku, tytul, opis, uid, dodany)
 				VALUES ('" . $miniatura . "', '" . $nazwa_pliku . "', '" . $tytul . "', '" . $opis . "', " . $this->user->data['user_id'] . ", " . $dodano . ")";
 
@@ -364,7 +561,7 @@ class main {
      * @param unknown_type $szerokosc_docelowa
      * @return boolean
      */
-    function zapisz_obraz($plik_tmp, $miejsce_zapisu, $szerokosc_docelowa, $znak_wodny, $polozenie_znaczka) {
+    private function zapisz_obraz($plik_tmp, $miejsce_zapisu, $szerokosc_docelowa, $znak_wodny, $polozenie_znaczka) {
         $nazwa = $plik_tmp['name'];
         $typ = strtolower(pathinfo($nazwa, PATHINFO_EXTENSION));
 
@@ -543,7 +740,7 @@ class main {
      * @param unknown_type $nazwa_miniatury - nazwa pod jaka zapisana bedzie miniatura
      * @return boolean - flaga poprawnosci
      */
-    function utworz_miniature($wgrany_plik, $nazwa_miniatury) {
+    private function utworz_miniature($wgrany_plik, $nazwa_miniatury) {
         $obraz_dyskowy = null;
         $typ = strtolower(pathinfo($wgrany_plik, PATHINFO_EXTENSION));
 
@@ -594,7 +791,7 @@ class main {
      * @param type $filename
      * @return type
      */
-    function przetworzenie_jesli_miniatura($filename) {
+    private function przetworzenie_jesli_miniatura($filename) {
         if (strpos(strtolower($filename), 'thumb_') !== false) {
             $filename = str_replace('thumb_', '', $filename);
         }
@@ -611,7 +808,7 @@ class main {
      * @param unknown_type $nazwa_pliku - nazwa pliku
      * @param unknown_type $nazwa_miniatury - nazwa miniatury (jesli istnieje)
      */
-    function ekran_koncowy_wgrywania($nazwa_pliku, $nazwa_miniatury = '', $stara_wgrywajka = 0) {
+    private function ekran_koncowy_wgrywania($nazwa_pliku, $nazwa_miniatury = '', $stara_wgrywajka = 0) {
         $zawartosc = '';
         $url = generate_board_url();
         if ($stara_wgrywajka == 1) {
@@ -640,7 +837,7 @@ class main {
      * @param type $zarzadzanie
      * @return string
      */
-    function lista_plikow_wiersz($plik, $index, $zarzadzanie = false, $kto_dodal = false) {
+    private function lista_plikow_wiersz($plik, $index, $zarzadzanie = false, $kto_dodal = false) {
 
         $zawartosc = "";
         $style = "";
@@ -706,7 +903,7 @@ class main {
      * @param type $uid
      * @return string
      */
-    function pobierz_pokolorowana_nazwe($uid) {
+    private function pobierz_pokolorowana_nazwe($uid) {
         $zawartosc = "";
 
         $sql = "SELECT u.user_id, u.username, u.user_colour FROM podf3_users u WHERE u.user_id = $uid";
@@ -717,7 +914,7 @@ class main {
                     $style = 'class="username-coloured" style="color: #' . $row['user_colour'] . ';"';
                 }
                 if ($colored_username != 'Anonymous') {
-                    $zawartosc = '<a ' . $style . ' href="memberlist.php?mode=viewprofile&u=' . $row['user_id'] . '">'
+                    $zawartosc = '<a ' . $style . ' href="' . generate_board_url() . '/memberlist.php?mode=viewprofile&u=' . $row['user_id'] . '">'
                             . $row['username'] .
                             '</a>';
                 }
