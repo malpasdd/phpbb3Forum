@@ -111,12 +111,9 @@ class main {
     }
 
     public function szukaj() {
-        page_header('Wgrywanie zaawansowane');
+        page_header('Szukaj');
 
-        $this->template->assign_block_vars('intro', array(
-        ));
-
-        return $this->helper->render('szukaj_body.html');
+        return $this->pobierz_pliki_nazwa("krewetka.jpg");
     }
 
     public function szukaj_pliki_usera() {
@@ -135,41 +132,89 @@ class main {
         return $this->wyszukiwanie_postow_id($fid);
     }
 
-    private function pobierz_pliki_nazwa($filename, $start) {
+    public function kod() {
+        page_header('Pobierz kod');
 
-        $pliki = array();
+        $fid = $this->request->variable('fid', 0);
+
+        return $this->pobierz_kod($fid);
+    }
+
+    /**
+     * zwraca kod zadanego pliku do wklejenia na forum
+     * @global type $userdata
+     * @global type $db
+     * @param type $fid
+     * @return string
+     */
+    function pobierz_kod($fid) {
+        $nazwa_pliku = '';
+        $nazwa_miniatury = '';
+        $stara_wgrywajka = 0;
+
+        $sql = "SELECT * FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = " . $fid . " ORDER BY dodany DESC";
+        if (!($result = $this->db->sql_query($sql))) {
+            return $this->brak_wynikow();
+        } else {
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $nazwa_pliku = $row['nazwa_pliku'];
+                $nazwa_miniatury = $row['miniatura'];
+                $stara_wgrywajka = $row['stara_wgrywajka'];
+            }
+
+            if ($nazwa_pliku != '' && $nazwa_miniatury != '') {
+                return $this->ekran_koncowy_wgrywania($nazwa_pliku, $nazwa_miniatury, $stara_wgrywajka);
+            } elseif ($nazwa_pliku != '') {
+                return $this->ekran_koncowy_wgrywania($nazwa_pliku, $nazwa_miniatury, $stara_wgrywajka);
+            } else {
+                return $this->brak_wynikow();
+            }
+        }
+    }
+
+    private function brak_wynikow() {
+        $zawartosc = '<table cellspacing="1" cellpading="0" class="forumline" align="center"  width="100%" style="margin-top: 0px;">
+						<tr>
+							<th style="padding-left: 7px;" width="100%" colspan="4">
+								Informacja
+							</th>
+						</tr>
+						</tr>
+							<td class="row1" align="center" colspan="4">Brak wynik&#243;w</td>
+						</tr>
+					</table>';
+
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $zawartosc
+        ));
+
+        return $this->helper->render('error_body.html');
+    }
+
+    private function pobierz_pliki_nazwa($filename) {
+
         $edycja = false;
         $zawartosc = "";
 
         $filename = str_replace('*', '%', $filename);
-        $sql = "SELECT * FROM " . PODFORAK_UPLOAD_TABLE . " WHERE nazwa_pliku LIKE '$filename' OR tytul LIKE '$filename' ORDER BY dodany DESC";
+        $sql = "SELECT * FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE LOWER(nazwa_pliku) LIKE '" . strtolower($filename) . "' OR LOWER(tytul) LIKE '" . strtolower($filename) . "' ORDER BY dodany DESC";
 
-        if (!($result = $db->sql_query($sql))) {
+        if (!($result = $this->db->sql_query($sql))) {
             message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
         }
 
-        while ($row = $db->sql_fetchrow($result)) {
-            $pliki[] = $row;
-        }
-
-        if (isset($filename)) {
-            $zawartosc = '<br /><span class="maintitle">Wyniki dla: ' . str_replace("%", "*", $filename) . '</span>';
-        }
-
-        $total_match_count = count($pliki);
-        $index = $start + 1;
-
-        $end = $start + $per_page;
-        if ($end > count($pliki)) {
-            $end = count($pliki);
-        }
-
-        for ($i = $start; $i < $end; $i++) {
-            $zawartosc .= lista_plikow_wiersz($pliki[$i], $index, $edycja, true);
+        $index = 0;
+        while ($row = $this->db->sql_fetchrow($result)) {
             $index++;
+            $zawartosc .= $this->lista_plikow_wiersz($row, $index, $edycja, true);
         }
 
-        return $zawartosc;
+        $this->template->assign_block_vars('intro', array(
+            'naglowek' => 'Wyniki dla: ' . str_replace("%", "*", $filename),
+            'content' => $zawartosc,
+        ));
+
+        return $this->helper->render('pliki_usera_body.html');
     }
 
     /**
@@ -264,11 +309,11 @@ class main {
      */
     function wiersz_wyszukiwania_listy_postow($row, $forum_style, $temat_style, $colored_username) {
         $zawartosc = '<tr><td class="row1" style="padding: 7px;">
-                                <a class="forumtitle" ' . $forum_style . ' href="viewforum.php?f=' . $row['forum_id'] . '">'
+                                <a class="forumtitle" ' . $forum_style . ' href="' . generate_board_url() . '/viewforum.php?f=' . $row['forum_id'] . '">'
                 . $row['forum_name'] .
                 '</a></td>
                                 <td class="row1" style="padding: 7px;">
-                                    <a class="topictitle" ' . $temat_style . ' href="viewtopic.php?p=' . $row['post_id'] . '#p' . $row['post_id'] . '">'
+                                    <a class="topictitle" ' . $temat_style . ' href="' . generate_board_url() . '/viewtopic.php?p=' . $row['post_id'] . '#p' . $row['post_id'] . '">'
                 . $row['topic_title'] .
                 '</a></td>
                                 <td class="row1" style="padding: 7px;">';
@@ -284,10 +329,14 @@ class main {
         return $zawartosc;
     }
 
+    /**
+     * Przygoowuje nazę pliku
+     * @param type $nazwa_pliku
+     * @return type
+     */
     private function przygotuj_nazwe_pliku($nazwa_pliku) {
 
-        $nazwa_pliku = str_replace(".", "%", 'upload/' . $nazwa_pliku);
-        return $nazwa_pliku;
+        return str_replace(".", "%", 'upload/' . $nazwa_pliku);
     }
 
     /**
@@ -874,17 +923,11 @@ class main {
         }
 
         $zawartosc .= '</td>';
+        $zawartosc .= '<td class="row2 akcjeplikow" width="15%" style="padding: 4px;' . $style . '"><ul>';
+        $zawartosc .= '<li><a href="plik?fid=' . $plik['id'] . '">Znajd&#378; posty z plikiem</a></li>';
+        $zawartosc .= '<li><a href="kod?fid=' . $plik['id'] . '" target="_blank">Pobierz kod na forum</a></li>';
 
-        $zawartosc .= '<td class="row2 akcjeplikow" width="15%" style="padding: 4px;' . $style . '"><ul>'
-                . '<li><a href="upload.php?action=szukaj&fid=' . $plik['id'] . '">Znajd&#378; posty z plikiem</a></li>';
-        $zawartosc .= '<li><a href="upload.php?fid=' . $plik['id'] . '" target="_blank">Pobierz kod na forum</a></li>';
         if ($zarzadzanie) {
-//            $zawartosc .= '<li><a href="upload.php?fid=' . $plik['id'] . '">Pobierz kod na forum</a></li>';
-            if (request_var('start', 0) > 0) {
-                $str = "&start=" . request_var('start', 0);
-            } else {
-                $str = "";
-            }
             if ($plik['prywatny'] == 0) {
                 $zawartosc .= '<li><a href="upload.php?action=prywatny&fid=' . $plik['id'] . '&status=1' . $str . '">Oznacz jako prywatny</a></li>';
             } else {

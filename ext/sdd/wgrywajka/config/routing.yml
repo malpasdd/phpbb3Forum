@@ -22,6 +22,10 @@ sdd_wgrywajka_szukaj_posty_z_plikiem:
     pattern: /wgrywajka/plik
     defaults: { _controller: sdd.wgrywajka.controller:szukaj_posty_z_plikiem }
 
-#sdd_wgrywajka_szukaj:
-#    pattern: /wgrywajka/szukaj
-#    defaults: { _controller: sdd.wgrywajka.controller:szukaj }
+sdd_wgrywajka_szukaj:
+    pattern: /wgrywajka/szukaj
+    defaults: { _controller: sdd.wgrywajka.controller:szukaj }
+
+sdd_wgrywajka_kod:
+    pattern: /wgrywajka/kod
+    defaults: { _controller: sdd.wgrywajka.controller:kod }
