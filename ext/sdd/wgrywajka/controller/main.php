@@ -113,7 +113,27 @@ class main {
     public function szukaj() {
         page_header('Szukaj');
 
-        return $this->pobierz_pliki_nazwa("krewetka.jpg");
+        $pic_name = $this->request->variable('pic_name', '');
+        $pic_owner = $this->request->variable('pic_owner', '');
+
+        if (!empty($pic_name)) {
+
+            return $this->pobierz_pliki_nazwa($pic_name);
+        } else if (!empty($pic_owner)) {
+
+            $uid = $this->pobierz_id_usera($pic_owner);
+            if ($uid > 0) {
+                redirect('wgrywajka/user?uid=' . $uid);
+            } else {
+                return $this->brak_wynikow();
+            }
+        } else {
+
+            $this->template->assign_block_vars('intro', array(
+                'wynik' => ''
+            ));
+            return $this->helper->render('szukaj_body.html');
+        }
     }
 
     public function szukaj_pliki_usera() {
@@ -140,6 +160,30 @@ class main {
         return $this->pobierz_kod($fid);
     }
 
+    public function zarzadzaj() {
+        
+    }
+
+    /**
+     * pobiera id uzytkownika na podstawie nazwy
+     * @global type $db
+     * @param type $username
+     * @return type
+     */
+    private function pobierz_id_usera($username) {
+        global $db;
+        $id = 0;
+        $sql = "SELECT user_id  FROM " . USERS_TABLE . " WHERE username = '$username'";
+        if (!($result = $db->sql_query($sql))) {
+            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+        }
+
+        while ($row = $db->sql_fetchrow($result)) {
+            $id = $row['user_id'];
+        }
+        return $id;
+    }
+
     /**
      * zwraca kod zadanego pliku do wklejenia na forum
      * @global type $userdata
@@ -147,7 +191,7 @@ class main {
      * @param type $fid
      * @return string
      */
-    function pobierz_kod($fid) {
+    private function pobierz_kod($fid) {
         $nazwa_pliku = '';
         $nazwa_miniatury = '';
         $stara_wgrywajka = 0;
@@ -191,6 +235,11 @@ class main {
         return $this->helper->render('error_body.html');
     }
 
+    /**
+     * Pobiera listę plików po nazwie
+     * @param type $filename
+     * @return type
+     */
     private function pobierz_pliki_nazwa($filename) {
 
         $edycja = false;

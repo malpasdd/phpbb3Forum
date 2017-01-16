@@ -1,54 +1,27 @@
 <!-- INCLUDE overall_header.html -->
 <!-- BEGIN intro -->
 
-<table width="100%" cellspacing="2" border="0" align="center" cellpadding="2">
-  <tr> 
-	<td align="right" valign="top" nowrap="nowrap">
-		<div class="pagination">
-			{TOTAL_FILES}
-			<!-- IF .pagination -->
-				<!-- INCLUDE pagination.html -->
-			<!-- ELSE -->
-				&bull; {PAGE_NUMBER}
-			<!-- ENDIF -->
-		</div>
-	</td>
-  </tr>
-</table>
-
-<table cellspacing="1" class="forumline" align="center"  width="100%" style="margin-top: 0px;">
-    <tr>
-        <th style="padding-left: 7px;" width="100%" colspan="5">
-            {intro.naglowek}
-        </th>
-    </tr>
-    <tr>
-        <td class="catBottom" align="center">Forum</td>
-        <td class="catBottom" align="center">Temat</td>
-        <td class="catBottom" align="center">Opis</td>
-        <td class="catBottom" align="center">Dodany</td>
-        <td class="catBottom" align="center">Akcje</td>
-    </tr>
-    {intro.content}
-    <tr>
-        <td class="catBottom" align="center" colspan="5"></td>
-    </tr>
-</table>
-
-<table width="100%" cellspacing="2" border="0" align="center" cellpadding="2">
-  <tr> 
-	<td align="right" valign="top" nowrap="nowrap">
-		<div class="pagination">
-			{TOTAL_FILES}
-			<!-- IF .pagination -->
-				<!-- INCLUDE pagination.html -->
-			<!-- ELSE -->
-				&bull; {PAGE_NUMBER}
-			<!-- ENDIF -->
-		</div>
-	</td>
-  </tr>
-</table>
+<form action="#" method="POST" ENCTYPE="multipart/form-data" id="wgrajform">
+    <table cellspacing="1" class="forumline" align="center"  width="100%" style="margin-top: 0px;">
+        <tr>
+            <th style="padding-left: 7px;" width="100%" colspan="2">Szukaj pliku</th>
+        </tr>
+        <tr>
+            <td class="row1" style="padding: 7px; width: 20%;"><b>Nazwa pliku:</b></td>
+            <td class="row2" style="padding: 7px;"><input class="post" type="text" size="30" name="pic_name"></td>
+        </tr>
+        <tr>
+            <td class="row1" colspan="2" style="padding: 7px;"><b>LUB</b></td>
+        </tr>
+        <tr>
+            <td class="row1" style="padding: 7px;"><b>Plik u&#380;ytkownika:</b></td>
+            <td class="row2" style="padding: 7px;"><input class="post" type="text" size="30" name="pic_owner"></td>
+        </tr>
+        <tr>
+            <td class="catBottom" align="center" colspan="2"><input type="submit" class="liteoption" value="Szukaj"/></td>
+        </tr>
+    </table>
+</form>
 
 <table cellspacing="1" class="forumline" align="center" width="100%" style="margin-top: 30px; text-align: center;">
     <tr>
