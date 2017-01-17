@@ -79,6 +79,9 @@ class main {
      */
     public function proste() {
         page_header('Wgrywanie proste');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
 
         $this->template->assign_block_vars('intro', array(
             'dozowlone_pliki' => $this->dozowlone_pliki,
@@ -92,6 +95,9 @@ class main {
 
     public function zaawansowane() {
         page_header('Wgrywanie zaawansowane');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
 
         $this->template->assign_block_vars('intro', array(
             'dozowlone_pliki' => $this->dozowlone_pliki,
@@ -105,6 +111,9 @@ class main {
 
     public function mojepliki() {
         page_header('Moje pliki');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
         $start = $this->request->variable('start', 0);
 
         return $this->pliki_usera($this->user->data['user_id'], $start, 'mojepliki');
@@ -112,6 +121,9 @@ class main {
 
     public function szukaj() {
         page_header('Szukaj');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
 
         $pic_name = $this->request->variable('pic_name', '');
         $pic_owner = $this->request->variable('pic_owner', '');
@@ -138,6 +150,9 @@ class main {
 
     public function szukaj_pliki_usera() {
         page_header('Pliki użytkownika');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
         $start = $this->request->variable('start', 0);
         $uid = $this->request->variable('uid', 0);
 
@@ -146,6 +161,9 @@ class main {
 
     public function szukaj_posty_z_plikiem() {
         page_header('Posty z plikiem');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
 
         $fid = $this->request->variable('fid', 0);
 
@@ -154,6 +172,9 @@ class main {
 
     public function kod() {
         page_header('Pobierz kod');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
 
         $fid = $this->request->variable('fid', 0);
 
@@ -161,7 +182,14 @@ class main {
     }
 
     public function zarzadzaj() {
-        
+        page_header('zarządzaj');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
+    }
+
+    private function czy_zalogowany() {
+        return $this->user->data['is_registered'];
     }
 
     /**
@@ -216,6 +244,10 @@ class main {
         }
     }
 
+    /**
+     * wyświetla komunikat o braku wyników
+     * @return type
+     */
     private function brak_wynikow() {
         $zawartosc = '<table cellspacing="1" cellpading="0" class="forumline" align="center"  width="100%" style="margin-top: 0px;">
 						<tr>
@@ -301,8 +333,6 @@ class main {
             LEFT JOIN podf3_forums f ON f.forum_id = ps.forum_id
             WHERE ps.post_text LIKE '%" . $this->przygotuj_nazwe_pliku($nazwa_pliku) . "%'";
 
-//            var_dump($sql);
-
                 if (!($result = $this->db->sql_query($sql))) {
                     message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
                 }
@@ -314,7 +344,7 @@ class main {
 
                         $forum_style = "";
                         $temat_style = "";
-//                    $colored_username = color_username($row['user_level'], $row['user_jr'], $row['user_id'], $row['username']);
+
                         $colored_username = $this->pobierz_pokolorowana_nazwe($row['user_id']);
                         if (isset($row['forum_color']) && $row['forum_color'] != '') {
                             $forum_style = 'style="color: #' . $row['forum_color'] . ';"';
@@ -546,6 +576,10 @@ class main {
         }
     }
 
+    /**
+     * zwraca listę dozwolonych typów plików
+     * @return type
+     */
     private function dozwolone_pliki() {
         return str_replace('"', '', $this->dozowlone_pliki);
     }
