@@ -181,15 +181,58 @@ class main {
         return $this->pobierz_kod($fid);
     }
 
-    public function zarzadzaj() {
+    public function prywatny() {
         page_header('zarządzaj');
         if (!$this->czy_zalogowany()) {
             login_box();
         }
+        $fid = $this->request->variable('fid', 0);
+        $status = request_var('status', 0);
+
+        return $this->oznacz_prywatny($fid, $status);
     }
 
     private function czy_zalogowany() {
         return $this->user->data['is_registered'];
+    }
+
+    /**
+     * zmienia status pliku na prywatny/publiczny
+     * @global type $userdata
+     * @global type $db
+     * @param type $plik_id
+     * @param type $status
+     * @return string
+     */
+    function oznacz_prywatny($plik_id, $status) {
+        $userdata = $this->user->data;
+        $uid = NULL;
+        $zawartosc = "";
+
+        $sql = "SELECT uid FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $plik_id  ORDER BY dodany DESC";
+        $result = $this->db->sql_query($sql);
+
+        while ($row = $this->db->sql_fetchrow($result)) {
+            $uid = $row['uid'];
+        }
+
+        if (isset($uid) && $uid == $userdata['user_id'] || $this->auth->acl_gets('a_', 'm_')) {
+            $sql = "UPDATE phpbb_podforak_upload SET prywatny =  $status WHERE id = $plik_id";
+
+            if (!$this->db->sql_query($sql)) {
+                $zawartosc = '<div id="komunikaty"><div class="messages error">B&#322;&#261;d</div></div>';
+            } else {
+                $zawartosc = '<div id="komunikaty"><div class="messages status">Poprawnie zmieniono status pliku.</div></div>';
+            }
+        } else {
+            $zawartosc = '<div id="komunikaty"><div class="messages error">Musisz by&#263; w&#322;a&#347;cicielem pliku!</div></div>';
+        }
+
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $zawartosc
+        ));
+
+        return $this->helper->render('error_body.html');
     }
 
     /**
@@ -1012,9 +1055,9 @@ class main {
 
         if ($zarzadzanie) {
             if ($plik['prywatny'] == 0) {
-                $zawartosc .= '<li><a href="upload.php?action=prywatny&fid=' . $plik['id'] . '&status=1' . $str . '">Oznacz jako prywatny</a></li>';
+                $zawartosc .= '<li><a href="prywatny?fid=' . $plik['id'] . '&status=1' . $str . '">Oznacz jako prywatny</a></li>';
             } else {
-                $zawartosc .= '<li><a href="upload.php?action=prywatny&fid=' . $plik['id'] . '&status=0' . $str . '">Oznacz jako publiczny</a></li>';
+                $zawartosc .= '<li><a href="prywatny?fid=' . $plik['id'] . '&status=0' . $str . '">Oznacz jako publiczny</a></li>';
             }
             $zawartosc .= '<li><a href="upload.php?action=usun&fid=' . $plik['id'] . '' . $str . '">Usu&#324; plik</a></li>';
         }

@@ -30,6 +30,6 @@ sdd_wgrywajka_kod:
     pattern: /wgrywajka/kod
     defaults: { _controller: sdd.wgrywajka.controller:kod }
 
-sdd_wgrywajka_zarzadzaj:
-    pattern: /wgrywajka/zarzadzaj
-    defaults: { _controller: sdd.wgrywajka.controller:zarzadzaj }
+sdd_wgrywajka_prywatny:
+    pattern: /wgrywajka/prywatny
+    defaults: { _controller: sdd.wgrywajka.controller:prywatny }
