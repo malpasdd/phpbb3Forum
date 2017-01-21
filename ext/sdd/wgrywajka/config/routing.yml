@@ -33,3 +33,7 @@ sdd_wgrywajka_kod:
 sdd_wgrywajka_prywatny:
     pattern: /wgrywajka/prywatny
     defaults: { _controller: sdd.wgrywajka.controller:prywatny }
+
+sdd_wgrywajka_usun:
+    pattern: /wgrywajka/usun
+    defaults: { _controller: sdd.wgrywajka.controller:usun }

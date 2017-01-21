@@ -182,7 +182,7 @@ class main {
     }
 
     public function prywatny() {
-        page_header('zarządzaj');
+        page_header('Oznacz jako prywatny');
         if (!$this->czy_zalogowany()) {
             login_box();
         }
@@ -192,8 +192,146 @@ class main {
         return $this->oznacz_prywatny($fid, $status);
     }
 
+    public function usun() {
+        page_header('Usuń plik');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
+        $fid = $this->request->variable('fid', 0);
+
+        return $this->usun_plik($fid);
+    }
+
     private function czy_zalogowany() {
         return $this->user->data['is_registered'];
+    }
+
+    /**
+     * usuwa plik
+     * @global type $db
+     * @global type $userdata
+     * @param type $fid
+     * @return string
+     */
+    function usun_plik($fid) {
+        $userdata = $this->user->data;
+        $uid = 0;
+        $nazwa_pliku = "";
+        $miniatura = "";
+        $zawartosc = "";
+        $tytul = "";
+        $stara_wgrywajka = 0;
+
+        $sql = "SELECT nazwa_pliku, uid, stara_wgrywajka, miniatura, tytul FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $fid  ORDER BY dodany DESC";
+        if (!($result = $this->db->sql_query($sql))) {
+            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+        }
+
+        while ($row = $this->db->sql_fetchrow($result)) {
+            $uid = $row['uid'];
+            $nazwa_pliku = $row['nazwa_pliku'];
+            $miniatura = $row['miniatura'];
+            $tytul = $row['tytul'];
+            $stara_wgrywajka = $row['stara_wgrywajka'];
+        }
+
+        if ($userdata['user_id'] == $uid || $this->auth->acl_gets('a_', 'm_')) {
+
+            $sql = "SELECT count(*) as lpostow FROM podf3_posts WHERE post_text LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
+            if (!($result = $this->db->sql_query($sql))) {
+                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+            }
+            $liczba_postow = 0;
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $liczba_postow += $row['lpostow'];
+            }
+
+            $sql = "SELECT count(*) as lpostow FROM podf3_users u WHERE u.user_sig LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
+//        var_dump($sql);
+            if (!($result = $this->db->sql_query($sql))) {
+                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+            }
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $liczba_postow += $row['lpostow'];
+            }
+
+            $sql = "SELECT count(*) as lpostow FROM podf3_privmsgs pt WHERE pt.message_text LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
+//        var_dump($sql);
+            if (!($result = $this->db->sql_query($sql))) {
+                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+            }
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $liczba_postow += $row['lpostow'];
+            }
+
+            $sql = "SELECT count(*) as lpostow FROM podf3_mchat WHERE message LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
+//        var_dump($sql);
+            if (!($result = $this->db->sql_query($sql))) {
+                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
+            }
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $liczba_postow += $row['lpostow'];
+            }
+
+//        var_dump($liczba_postow);
+//        exit;
+
+            if ($liczba_postow > 0) {
+                $zawartosc = '<div id="komunikaty"><div class="messages error">Nie mo&#380;esz usun&#261;&#263; ' . $tytul . ', poniewa&#380; jest u&#380;ywany lub nie istnieje!</div></div>';
+            } else {
+                $ex = false;
+                if ($stara_wgrywajka == 1) {
+                    $nazwa_pliku = iconv("ISO-8859-2", "UTF-8", $nazwa_pliku);
+                    if (file_exists("upload/" . $nazwa_pliku)) {
+                        $unlink = unlink("upload/" . $nazwa_pliku);
+                        $miniatura = iconv("ISO-8859-2", "UTF-8", $miniatura);
+                        if ($miniatura != "") {
+                            $unlink = unlink($miniatura);
+                        }
+                    } else {
+                        $ex = true;
+                    }
+                } else {
+                    if (file_exists("upload/" . $nazwa_pliku)) {
+                        $unlink = unlink("upload/" . $nazwa_pliku);
+                        // if na miniature
+                        if ($miniatura != "") {
+                            $unlink = unlink($miniatura);
+                        }
+                    } else {
+                        $ex = true;
+                    }
+                }
+                if (!$ex) {
+                    $this->usun_wpis_pliku($fid);
+                    $zawartosc = '<div id="komunikaty"><div class="messages status2">Pomy&#347;lnie suni&#281;to plik ' . $tytul . '!</div></div>';
+                } else {
+                    $zawartosc = '<div id="komunikaty"><div class="messages error">Nie znaleziono pliku  ' . $tytul . '! ';
+                }
+            }
+        } else {
+            $zawartosc = '<div id="komunikaty"><div class="messages error">Brak uprawnie&#324;</div></div>';
+        }
+
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $zawartosc
+        ));
+
+        return $this->helper->render('error_body.html');
+    }
+
+    /**
+     * usuwa wpis bazy danych pliku
+     * @global type $db
+     * @param type $fid
+     */
+    function usun_wpis_pliku($fid) {
+        global $db;
+
+        $sql2 = "DELETE FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $fid";
+        if (!($db->sql_query($sql2))) {
+            message_die(GENERAL_ERROR, 'Couldnt idelete from ' . PODFORAK_UPLOAD_TABLE . ' table', '', __LINE__, __FILE__, $sql2);
+        }
     }
 
     /**
@@ -1059,7 +1197,7 @@ class main {
             } else {
                 $zawartosc .= '<li><a href="prywatny?fid=' . $plik['id'] . '&status=0' . $str . '">Oznacz jako publiczny</a></li>';
             }
-            $zawartosc .= '<li><a href="upload.php?action=usun&fid=' . $plik['id'] . '' . $str . '">Usu&#324; plik</a></li>';
+            $zawartosc .= '<li><a href="usun?fid=' . $plik['id'] . '' . $str . '">Usu&#324; plik</a></li>';
         }
         $zawartosc .= '</ul></td></tr>';
 
