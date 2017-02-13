@@ -259,6 +259,10 @@ class main {
         return $this->helper->render('error_body.html');
     }
 
+    /**
+     * komunikat o braku uprawnień
+     * @return string
+     */
     private function komunikat_brak_uprawnien() {
         return '<div id="komunikaty"><div class="messages error">Nie jeste&#347; administratorem</div></div>';
     }
@@ -268,13 +272,12 @@ class main {
      * @param type $pliki
      * @return string
      */
-    function usuwanie_plikow($pliki) {
+    private function usuwanie_plikow($pliki) {
         $zawartosc = "";
         foreach ($pliki as $plik) {
             $zawartosc .= $this->usun_plik($plik, true);
             $zawartosc .= "<br />";
         }
-//        $zawartosc .= '<center><a href ="upload.php?action=admin&level=1" class="liteoption">Klinij aby wr&#243;&#263; do poprzedniego ekranu</a></center>';
 
         return $zawartosc;
     }
@@ -308,9 +311,6 @@ class main {
             }
 
             $sql = "SELECT id, nazwa_pliku, miniatura, tytul, dodany, uid, stara_wgrywajka, sprawdzony FROM phpbb_podforak_upload WHERE uzyty = 0 AND sprawdzony != 0 ORDER BY dodany DESC, sprawdzony DESC";
-//        $sql = "SELECT id, nazwa_pliku, miniatura, tytul, dodany, uid, stara_wgrywajka, sprawdzony FROM phpbb_podforak_upload WHERE uzyty = 0 AND sprawdzony != 0 AND dodany < 1432598400 ORDER BY uid ASC, sprawdzony DESC, dodany DESC";
-//        $sql = "SELECT id, nazwa_pliku, miniatura, tytul, dodany, uid, stara_wgrywajka, sprawdzony FROM phpbb_podforak_upload WHERE uzyty = 0 AND sprawdzony != 0 AND uid <= 1 ORDER BY uid ASC, sprawdzony DESC, dodany DESC";
-
             $result = $this->db->sql_query($sql);
 
             $zawartosc .= '<form id="adminform" enctype="multipart/form-data" method="POST" action="./adminzarzadzaj?k=2">';
@@ -566,28 +566,22 @@ class main {
             }
 
             $sql = "SELECT count(*) as lpostow FROM podf3_users u WHERE u.user_sig LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
-//        var_dump($sql);
             $result = $this->db->sql_query($sql);
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
             }
 
             $sql = "SELECT count(*) as lpostow FROM podf3_privmsgs pt WHERE pt.message_text LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
-//        var_dump($sql);
             $result = $this->db->sql_query($sql);
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
             }
 
             $sql = "SELECT count(*) as lpostow FROM podf3_mchat WHERE message LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
-//        var_dump($sql);
             $result = $this->db->sql_query($sql);
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
             }
-
-//        var_dump($liczba_postow);
-//        exit;
 
             if ($liczba_postow > 0) {
                 $zawartosc = '<div id="komunikaty"><div class="messages error">Nie mo&#380;esz usun&#261;&#263; ' . $tytul . ', poniewa&#380; jest u&#380;ywany lub nie istnieje!</div></div>';
