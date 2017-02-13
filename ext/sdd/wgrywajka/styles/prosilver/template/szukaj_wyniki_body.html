@@ -1,21 +1,6 @@
 <!-- INCLUDE overall_header.html -->
 <!-- BEGIN intro -->
 
-<table width="100%" cellspacing="2" border="0" align="center" cellpadding="2">
-    <tr> 
-        <td align="right" valign="top" nowrap="nowrap">
-            <div class="pagination">
-                {TOTAL_FILES}
-                <!-- IF .pagination -->
-                <!-- INCLUDE pagination.html -->
-                <!-- ELSE -->
-                &bull; {PAGE_NUMBER}
-                <!-- ENDIF -->
-            </div>
-        </td>
-    </tr>
-</table>
-
 <table cellspacing="1" class="forumline" align="center"  width="100%" style="margin-top: 0px;">			
     <tr>
         <th class="thTop" nowrap="nowrap">Forum</th>
@@ -28,24 +13,9 @@
     </tr>
 </table>
 
-<table width="100%" cellspacing="2" border="0" align="center" cellpadding="2">
-    <tr> 
-        <td align="right" valign="top" nowrap="nowrap">
-            <div class="pagination">
-                {TOTAL_FILES}
-                <!-- IF .pagination -->
-                <!-- INCLUDE pagination.html -->
-                <!-- ELSE -->
-                &bull; {PAGE_NUMBER}
-                <!-- ENDIF -->
-            </div>
-        </td>
-    </tr>
-</table>
-
 <table cellspacing="1" class="forumline" align="center" width="100%" style="margin-top: 30px; text-align: center;">
     <tr>
-        <th width="100%" nowrap="nowrap" colspan="6">Opcje</th>
+        <th width="100%" nowrap="nowrap" colspan="5">Opcje</th>
     </tr>
     <tr>
         <td class="row1" width="20%" style="padding: 8px;">
@@ -63,9 +33,13 @@
         <td class="row1" width="20%" style="padding: 8px;">
             <a class="forumlink" href="http://podforak.rzeszow.pl/viewtopic.php?t=4446">Pomoc</a>
         </td>
-        {intro.admin}
     </tr>
 </table>
+<div align="center"><br /><br />
+    <span class="copyright">
+        {intro.admin}
+    </span>
+</div>
 <div align="center"><br /><br />
     <span class="copyright">
         Skrypt opracował <a href="http://podforak.rzeszow.pl/profile.php?mode=viewprofile&u=88" target="_blank">SDD</a>

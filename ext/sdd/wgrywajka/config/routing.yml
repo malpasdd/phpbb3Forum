@@ -37,3 +37,11 @@ sdd_wgrywajka_prywatny:
 sdd_wgrywajka_usun:
     pattern: /wgrywajka/usun
     defaults: { _controller: sdd.wgrywajka.controller:usun }
+    
+sdd_wgrywajka_admin:
+    pattern: /wgrywajka/admin
+    defaults: { _controller: sdd.wgrywajka.controller:admin }
+
+sdd_wgrywajka_adminzarzadzaj:
+    pattern: /wgrywajka/adminzarzadzaj
+    defaults: { _controller: sdd.wgrywajka.controller:adminzarzadzaj }

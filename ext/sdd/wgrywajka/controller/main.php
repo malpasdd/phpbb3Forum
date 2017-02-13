@@ -48,6 +48,9 @@ class main {
     /** @var string phpBB root path */
     protected $root_path;
 
+    /**  */
+    protected $nie_skanowano_od;
+
     /**
      * Constructor
      * 
@@ -70,6 +73,7 @@ class main {
         $this->auth = $auth;
         $this->root_path = $root_path;
         $this->max_rozmiar = 1024 * 1024;
+        $this->nie_skanowano_od = 2 * 24 * 3600;
         $this->dozowlone_pliki = '"png", "gif", "jpeg", "jpg", "pdf", "zip", "xls", "xlsx", "ppt", "pps", "pptx", "ppsx", "doc", "docx"';
     }
 
@@ -87,7 +91,8 @@ class main {
             'dozowlone_pliki' => $this->dozowlone_pliki,
             'dozowlone_pliki_label' => $this->dozwolone_pliki(),
             'max_rozmiar' => $this->max_rozmiar,
-            'max_rozmiar_label' => round($this->max_rozmiar / 1048576, 2)
+            'max_rozmiar_label' => round($this->max_rozmiar / 1048576, 2),
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('proste_body.html');
@@ -103,7 +108,8 @@ class main {
             'dozowlone_pliki' => $this->dozowlone_pliki,
             'dozowlone_pliki_label' => $this->dozwolone_pliki(),
             'max_rozmiar' => $this->max_rozmiar * 10,
-            'max_rozmiar_label' => round($this->max_rozmiar * 10 / 1048576, 2)
+            'max_rozmiar_label' => round($this->max_rozmiar * 10 / 1048576, 2),
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('zaawansowane_body.html');
@@ -142,7 +148,8 @@ class main {
         } else {
 
             $this->template->assign_block_vars('intro', array(
-                'wynik' => ''
+                'wynik' => '',
+                'admin' => $this->daj_admin_link()
             ));
             return $this->helper->render('szukaj_body.html');
         }
@@ -199,21 +206,337 @@ class main {
         }
         $fid = $this->request->variable('fid', 0);
 
-        return $this->usun_plik($fid);
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $this->usun_plik($fid),
+            'admin' => $this->daj_admin_link()
+        ));
+
+        return $this->helper->render('error_body.html');
     }
 
+    public function admin() {
+        page_header('Administracja');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
+        $zawartosc = '';
+
+        if (!$this->auth->acl_gets('a_', 'm_')) {
+            $zawartosc = $this->komunikat_brak_uprawnien();
+        } else {
+            $zawartosc = $this->statystyki_administracja();
+        }
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $zawartosc,
+            'admin' => $this->daj_admin_link()
+        ));
+
+        return $this->helper->render('error_body.html');
+    }
+
+    public function adminzarzadzaj() {
+        page_header('Administracja');
+        if (!$this->czy_zalogowany()) {
+            login_box();
+        }
+
+        if (!$this->auth->acl_gets('a_', 'm_')) {
+            $zawartosc = $this->komunikat_brak_uprawnien();
+        } else {
+            $krok = request_var('k', 0);
+            if ($krok > 0) {
+                $zaznaczone_pliki = $this->request->variable("chk_group", array('' => ''));
+                $zawartosc = $this->usuwanie_plikow($zaznaczone_pliki);
+            } else {
+                $zawartosc = $this->formularz_administracyjny();
+            }
+        }
+        $this->template->assign_block_vars('intro', array(
+            'wynik' => $zawartosc,
+            'admin' => $this->daj_admin_link()
+        ));
+
+        return $this->helper->render('error_body.html');
+    }
+
+    private function komunikat_brak_uprawnien() {
+        return '<div id="komunikaty"><div class="messages error">Nie jeste&#347; administratorem</div></div>';
+    }
+
+    /**
+     * masowe usuwanie plikow (np. z formularza dministracyjnego)
+     * @param type $pliki
+     * @return string
+     */
+    function usuwanie_plikow($pliki) {
+        $zawartosc = "";
+        foreach ($pliki as $plik) {
+            $zawartosc .= $this->usun_plik($plik, true);
+            $zawartosc .= "<br />";
+        }
+//        $zawartosc .= '<center><a href ="upload.php?action=admin&level=1" class="liteoption">Klinij aby wr&#243;&#263; do poprzedniego ekranu</a></center>';
+
+        return $zawartosc;
+    }
+
+    /**
+     * uruchamia procedure wyszukujaca wolne pliki
+     * i wyswietla formularz administracji plikami
+     * @global type $userdata
+     * @global type $db
+     * @return string
+     */
+    function formularz_administracyjny() {
+        $zawartosc .= '<script type="text/javascript">
+            function toggle(source) {
+                checkboxes = document.getElementsByName(\'chk_group[]\');
+                for (var i = 0, n = checkboxes.length; i < n; i++) {
+                    checkboxes[i].checked = source.checked;
+                }
+            }
+        </script>';
+
+        if (!$this->auth->acl_gets('a_', 'm_')) {
+            $zawartosc .= $this->komunikat_brak_uprawnien();
+        } else {
+            if (!$this->formularz_administracyjny_kiedy_skanowano()) {
+                $dni = $this->nie_skanowano_od / (3600 * 24);
+                $zawartosc .= '<div id="komunikaty"><div class="messages error">Pliki nie by&#322;y skanowane conajmniej ' . $dni . ' dni, przed usni&#281;ciem plik&#243;w uruchom <a href="upload_sprawdz_pliki.php" >procedur&#281; sprawdzania wolnych plik&#243;w!</a></div></div>';
+            } else {
+                $dni = $this->nie_skanowano_od / (3600 * 24);
+                $zawartosc .= '<div id="komunikaty"><div class="messages status2">Pliki by&#322;y skanowane mniej ni&#380; ' . $dni . ' dni temu, jednak w ka&#380;dej chwili mo&#380;esz uruchomi&#263; <a href="upload_sprawdz_pliki.php" >procedur&#281; sprawdzania wolnych plik&#243;w!</a></div></div>';
+            }
+
+            $sql = "SELECT id, nazwa_pliku, miniatura, tytul, dodany, uid, stara_wgrywajka, sprawdzony FROM phpbb_podforak_upload WHERE uzyty = 0 AND sprawdzony != 0 ORDER BY dodany DESC, sprawdzony DESC";
+//        $sql = "SELECT id, nazwa_pliku, miniatura, tytul, dodany, uid, stara_wgrywajka, sprawdzony FROM phpbb_podforak_upload WHERE uzyty = 0 AND sprawdzony != 0 AND dodany < 1432598400 ORDER BY uid ASC, sprawdzony DESC, dodany DESC";
+//        $sql = "SELECT id, nazwa_pliku, miniatura, tytul, dodany, uid, stara_wgrywajka, sprawdzony FROM phpbb_podforak_upload WHERE uzyty = 0 AND sprawdzony != 0 AND uid <= 1 ORDER BY uid ASC, sprawdzony DESC, dodany DESC";
+
+            $result = $this->db->sql_query($sql);
+
+            $zawartosc .= '<form id="adminform" enctype="multipart/form-data" method="POST" action="./adminzarzadzaj?k=2">';
+            $zawartosc .= '<table cellspacing="1" cellpading="0" class="forumline" align="center"  width="100%" style="margin-top: 0px;">';
+            $zawartosc .= '<tr>
+                    <th style="padding-left: 7px;"> # </th>
+                    <th style="padding-left: 7px;" id="zaznaczall"> <input type="checkbox" name="zaznaczall" onClick="toggle(this)" value="-1" /> </th>
+                    <th width="55%" style="padding-left: 7px;"> Plik </th>
+                    <th width="15%" style="padding-left: 7px;"> Doda&#322; </th>
+                    <th width="15%" style="padding-left: 7px;"> Dodany </th>
+                    <th width="15%" style="padding-left: 7px;"> Sprawdzony </th>
+            </tr>';
+            $i = 1;
+            while ($row = $this->db->sql_fetchrow($result)) {
+                $zawartosc .= $this->formularz_administracyjny_rekord($row, $i);
+                $i++;
+            }
+            $zawartosc .= '<tr>
+                            <td class="catBottom" align="center" colspan="6"><input type="submit" class="liteoption" value="Delete"/></td>
+                       </tr>
+                    </table>';
+            $zawartosc .= '</form>';
+        }
+
+        return $zawartosc;
+    }
+
+    /**
+     * wpis pojedynczego pliku w formularzu zarzadzania plikami wolnymi
+     * @param type $plik
+     * @return string
+     */
+    private function formularz_administracyjny_rekord($plik, $i) {
+        $zawartosc .= '<tr>
+                <td class="row1" style="padding: 7px;">' . $i . '</td>
+                <td class="row1" style="padding: 7px;"><input type="checkbox" name="chk_group[]" value="' . $plik['id'] . '" /></td>
+                <td class="row2" style="padding: 7px;">';
+        if ($plik['stara_wgrywajka'] == 1) {
+            $tytul = $plik['nazwa_pliku'];
+            if ($plik['tytul'] != '') {
+                $tytul = $plik['tytul'];
+            }
+            $zawartosc .= '<a href="http://podforak.rzeszow.pl/upload/' . $plik['nazwa_pliku'] . '" target="_blank">' . $tytul . '</a>';
+        } else {
+            $tytul = $plik['nazwa_pliku'];
+            if ($plik['tytul'] != '') {
+                $tytul = $plik['tytul'];
+            }
+            $zawartosc .= '<a href="upload/' . $plik['nazwa_pliku'] . '" target="_blank">' . $tytul . '</a>';
+        }
+
+        $zawartosc .= '</td>
+                <td class="row1" style="padding: 7px;">';
+
+        $nazwa_usera = $this->pobierz_pokolorowana_nazwe($plik['uid']);
+        if ($nazwa_usera != "") {
+            $zawartosc .= $nazwa_usera;
+        } else {
+            $zawartosc .= "brak usera";
+        }
+
+        $zawartosc .= '</td>
+                <td class="row2" style="padding: 7px;">' . date('d-m-Y h:i', $plik['dodany']) . '</td>
+                <td class="row2" style="padding: 7px;">' . date('d-m-Y h:i', $plik['sprawdzony']) . '</td>
+            </tr>';
+
+        return $zawartosc;
+    }
+
+    /**
+     * 
+     * @global type $nie_skanowano_od
+     * @return boolean
+     */
+    private function formularz_administracyjny_kiedy_skanowano() {
+        global $nie_skanowano_od;
+        $najstarszy = NULL;
+
+        $sql = "SELECT MIN(sprawdzony) as najstarszy FROM phpbb_podforak_upload WHERE sprawdzony != 0";
+        $result = $this->db->sql_query($sql);
+        while ($row = $this->db->sql_fetchrow($result)) {
+            $najstarszy = $row['najstarszy'];
+        }
+
+        $dzis = time();
+        if ($najstarszy != NULL && (($dzis - $najstarszy) < $nie_skanowano_od)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Sprawdza czy użytkownik jest zarejestrowany
+     * @return type
+     */
     private function czy_zalogowany() {
         return $this->user->data['is_registered'];
     }
 
     /**
+     * Zwraca link do panelu administracji
+     * @return string
+     */
+    private function daj_admin_link() {
+        $admin_link = "";
+        if ($this->auth->acl_gets('a_', 'm_')) {
+            $admin_link = "<a class=\"forumlink\" href=\"./admin\">Administracja wgrywajki</a>";
+        }
+
+        return $admin_link;
+    }
+
+    /**
+     * wyswietla panel statystyk
+     * @return string
+     */
+    private function statystyki_administracja() {
+        $zawartosc = '<table class="forumline" width="100%" align="center" cellspacing="1" style="margin-top: 0px;" cellpading="0">
+            <tr>
+                    <th width="100%" colspan="3" style="padding-left: 7px;"> Statystyki </th>
+            </tr>
+            <tr>
+                    <td class="row1" style="padding: 7px; width: 22%;"> <b>Liczba dodanych plik&#243;w:</b></td>
+                    <td class="row2" style="padding: 7px; width: 58%;">' . $this->ststystyki_liczba_plikow() . '</td>
+                    <td class="row2" rowspan="2" style="padding: 7px; width: 20%;"><a href="./adminzarzadzaj">Zarz&#261;dzaj wolnymi plikami</a></td>
+            </tr>
+            <tr>
+                    <td class="row1" style="padding: 7px; width: 22%;"> <b>&#321;&#261;czny rozmiar plik&#243;w na dysku:</b></td>
+                    <td class="row2" style="padding: 7px; width: 58%;">' . $this->statystyki_rozmiar_plikow() . '</td>
+            </tr>
+        </table>';
+
+//            $zawartosc .= '<br /><br /><center><a href="upload.php?action=doreupu">PLIKI DO REUPU</a> <a href="upload.php?action=allegro">AUKCJE DO ARCHIWIZACJI</a></center>';
+
+        return $zawartosc;
+    }
+
+    /**
+     * oblicza rozmiar plikow zapisanych w folderze upload
+     * @return type
+     */
+    private function statystyki_rozmiar_plikow() {
+        $files = array();
+        $zawartosc = "";
+        $dir = @opendir("./upload");
+        if ($dir) {
+            while ($file = readdir($dir)) {
+                if (substr($file, 0, 1) != "." && substr($file, 0, 1) != "..") {
+                    if (strpos($file, '.') !== false) {
+                        $files[] = $file;
+                    }
+                }
+            }
+            closedir($dir);
+        } else {
+            $zawartosc .= 'Brak katalogu plik&#243;w';
+        }
+
+        if (!isset($files)) {
+            $zawartosc .= 'Brak plik&#243;w';
+        } else {
+            $size = 0;
+            foreach ($files as $file) {
+                $size += filesize("./upload/" . $file);
+            }
+
+            $zawartosc .= $this->formatSizeUnits($size);
+        }
+
+        return $zawartosc;
+    }
+
+    /**
+     * formatuje rozmiar odpowiednio dopasowujac jednostke
+     * @param type $bytes
+     * @return string
+     */
+    private function formatSizeUnits($bytes) {
+        if ($bytes >= 1073741824) {
+            $bytes = number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            $bytes = number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            $bytes = number_format($bytes / 1024, 2) . ' KB';
+        } elseif ($bytes > 1) {
+            $bytes = $bytes . ' bytes';
+        } elseif ($bytes == 1) {
+            $bytes = $bytes . ' byte';
+        } else {
+            $bytes = '0 bytes';
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * zlicza liczbe plikow i miniatur na podstawie wpisow z bazy
+     * @return string
+     */
+    function ststystyki_liczba_plikow() {
+        $pliki = array();
+
+        $zawartosc = "";
+        $sql = "SELECT COUNT('x') as liczba FROM phpbb_podforak_upload UNION SELECT COUNT('x') FROM phpbb_podforak_upload WHERE miniatura != ''";
+
+        $result = $this->db->sql_query($sql);
+        while ($row = $this->db->sql_fetchrow($result)) {
+            $pliki[] = $row['liczba'];
+        }
+
+        if (count($pliki) > 1) {
+            $zawartosc = $pliki[0] . " (" . $pliki[1] . " z miniaturami)";
+        } else {
+            $zawartosc = "blad pobierania danych";
+        }
+
+        return $zawartosc;
+    }
+
+    /**
      * usuwa plik
-     * @global type $db
-     * @global type $userdata
      * @param type $fid
      * @return string
      */
-    function usun_plik($fid) {
+    private function usun_plik($fid) {
         $userdata = $this->user->data;
         $uid = 0;
         $nazwa_pliku = "";
@@ -223,9 +546,7 @@ class main {
         $stara_wgrywajka = 0;
 
         $sql = "SELECT nazwa_pliku, uid, stara_wgrywajka, miniatura, tytul FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $fid  ORDER BY dodany DESC";
-        if (!($result = $this->db->sql_query($sql))) {
-            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-        }
+        $result = $this->db->sql_query($sql);
 
         while ($row = $this->db->sql_fetchrow($result)) {
             $uid = $row['uid'];
@@ -238,9 +559,7 @@ class main {
         if ($userdata['user_id'] == $uid || $this->auth->acl_gets('a_', 'm_')) {
 
             $sql = "SELECT count(*) as lpostow FROM podf3_posts WHERE post_text LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
-            if (!($result = $this->db->sql_query($sql))) {
-                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-            }
+            $result = $this->db->sql_query($sql);
             $liczba_postow = 0;
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
@@ -248,27 +567,21 @@ class main {
 
             $sql = "SELECT count(*) as lpostow FROM podf3_users u WHERE u.user_sig LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
 //        var_dump($sql);
-            if (!($result = $this->db->sql_query($sql))) {
-                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-            }
+            $result = $this->db->sql_query($sql);
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
             }
 
             $sql = "SELECT count(*) as lpostow FROM podf3_privmsgs pt WHERE pt.message_text LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
 //        var_dump($sql);
-            if (!($result = $this->db->sql_query($sql))) {
-                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-            }
+            $result = $this->db->sql_query($sql);
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
             }
 
             $sql = "SELECT count(*) as lpostow FROM podf3_mchat WHERE message LIKE '%upload/" . pathinfo($nazwa_pliku, PATHINFO_FILENAME) . "%'";
 //        var_dump($sql);
-            if (!($result = $this->db->sql_query($sql))) {
-                message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-            }
+            $result = $this->db->sql_query($sql);
             while ($row = $this->db->sql_fetchrow($result)) {
                 $liczba_postow += $row['lpostow'];
             }
@@ -306,43 +619,33 @@ class main {
                     $this->usun_wpis_pliku($fid);
                     $zawartosc = '<div id="komunikaty"><div class="messages status2">Pomy&#347;lnie suni&#281;to plik ' . $tytul . '!</div></div>';
                 } else {
-                    $zawartosc = '<div id="komunikaty"><div class="messages error">Nie znaleziono pliku  ' . $tytul . '! ';
+                    $zawartosc = '<div id="komunikaty"><div class="messages error">Nie znaleziono pliku  ' . $tytul . '!</div></div>';
                 }
             }
         } else {
-            $zawartosc = '<div id="komunikaty"><div class="messages error">Brak uprawnie&#324;</div></div>';
+            $zawartosc = $this->komunikat_brak_uprawnien();
         }
 
-        $this->template->assign_block_vars('intro', array(
-            'wynik' => $zawartosc
-        ));
-
-        return $this->helper->render('error_body.html');
+        return $zawartosc;
     }
 
     /**
      * usuwa wpis bazy danych pliku
-     * @global type $db
      * @param type $fid
      */
-    function usun_wpis_pliku($fid) {
-        global $db;
+    private function usun_wpis_pliku($fid) {
 
         $sql2 = "DELETE FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $fid";
-        if (!($db->sql_query($sql2))) {
-            message_die(GENERAL_ERROR, 'Couldnt idelete from ' . PODFORAK_UPLOAD_TABLE . ' table', '', __LINE__, __FILE__, $sql2);
-        }
+        $this->db->sql_query($sql2);
     }
 
     /**
      * zmienia status pliku na prywatny/publiczny
-     * @global type $userdata
-     * @global type $db
      * @param type $plik_id
      * @param type $status
      * @return string
      */
-    function oznacz_prywatny($plik_id, $status) {
+    private function oznacz_prywatny($plik_id, $status) {
         $userdata = $this->user->data;
         $uid = NULL;
         $zawartosc = "";
@@ -367,7 +670,8 @@ class main {
         }
 
         $this->template->assign_block_vars('intro', array(
-            'wynik' => $zawartosc
+            'wynik' => $zawartosc,
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('error_body.html');
@@ -375,19 +679,14 @@ class main {
 
     /**
      * pobiera id uzytkownika na podstawie nazwy
-     * @global type $db
      * @param type $username
      * @return type
      */
     private function pobierz_id_usera($username) {
-        global $db;
         $id = 0;
         $sql = "SELECT user_id  FROM " . USERS_TABLE . " WHERE username = '$username'";
-        if (!($result = $db->sql_query($sql))) {
-            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-        }
-
-        while ($row = $db->sql_fetchrow($result)) {
+        $result = $this->db->sql_query($sql);
+        while ($row = $this->db->sql_fetchrow($result)) {
             $id = $row['user_id'];
         }
         return $id;
@@ -395,8 +694,6 @@ class main {
 
     /**
      * zwraca kod zadanego pliku do wklejenia na forum
-     * @global type $userdata
-     * @global type $db
      * @param type $fid
      * @return string
      */
@@ -442,7 +739,8 @@ class main {
 					</table>';
 
         $this->template->assign_block_vars('intro', array(
-            'wynik' => $zawartosc
+            'wynik' => $zawartosc,
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('error_body.html');
@@ -461,10 +759,7 @@ class main {
         $filename = str_replace('*', '%', $filename);
         $sql = "SELECT * FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE LOWER(nazwa_pliku) LIKE '" . strtolower($filename) . "' OR LOWER(tytul) LIKE '" . strtolower($filename) . "' ORDER BY dodany DESC";
 
-        if (!($result = $this->db->sql_query($sql))) {
-            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-        }
-
+        $result = $this->db->sql_query($sql);
         $index = 0;
         while ($row = $this->db->sql_fetchrow($result)) {
             $index++;
@@ -474,6 +769,7 @@ class main {
         $this->template->assign_block_vars('intro', array(
             'naglowek' => 'Wyniki dla: ' . str_replace("%", "*", $filename),
             'content' => $zawartosc,
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('pliki_usera_body.html');
@@ -481,9 +777,6 @@ class main {
 
     /**
      * wyszukiwnanie postow z z plikiem o zadanym id
-     * @global type $userdata
-     * @global type $db
-     * @global type $tree
      * @param type $plik_id
      * @return string
      */
@@ -495,10 +788,7 @@ class main {
         $zawartosc = '';
         $sql = "SELECT nazwa_pliku, uid, prywatny FROM " . $this->PODFORAK_UPLOAD_TABLE . " WHERE id = $plik_id  ORDER BY dodany DESC";
 
-        if (!($result = $this->db->sql_query($sql))) {
-            message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-        }
-
+        $result = $this->db->sql_query($sql);
         while ($row = $this->db->sql_fetchrow($result)) {
             $nazwa_pliku = $row['nazwa_pliku'];
             $uid = $row['uid'];
@@ -514,10 +804,7 @@ class main {
             LEFT JOIN podf3_forums f ON f.forum_id = ps.forum_id
             WHERE ps.post_text LIKE '%" . $this->przygotuj_nazwe_pliku($nazwa_pliku) . "%'";
 
-                if (!($result = $this->db->sql_query($sql))) {
-                    message_die(GENERAL_ERROR, 'Could not query posts table', '', __LINE__, __FILE__, $sql);
-                }
-
+                $result = $this->db->sql_query($sql);
                 $i = 0;
                 while ($row = $this->db->sql_fetchrow($result)) {
 
@@ -554,6 +841,7 @@ class main {
         $this->template->assign_block_vars('intro', array(
             'naglowek' => 'Wyniki',
             'content' => $zawartosc,
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('szukaj_wyniki_body.html');
@@ -657,6 +945,7 @@ class main {
         $this->template->assign_block_vars('intro', array(
             'naglowek' => 'Pliki dodane przez ' . $this->pobierz_pokolorowana_nazwe($uid),
             'content' => $zawartosc,
+            'admin' => $this->daj_admin_link()
         ));
 
         $pagination = $phpbb_container->get('pagination');
@@ -672,7 +961,6 @@ class main {
 
     /**
      * pobiera wpisy z tabeli plikow uzytkownika
-     * @global type $db
      * @param type $uid
      * @return string
      */
@@ -799,7 +1087,8 @@ class main {
      */
     private function blad_rozszerzenia() {
         $this->template->assign_block_vars('intro', array(
-            'wynik' => '<div class="messages error"> Wybrano niedozwolony typ pliku!</div>'
+            'wynik' => '<div class="messages error"> Wybrano niedozwolony typ pliku!</div>',
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('error_body.html');
@@ -811,7 +1100,8 @@ class main {
      */
     private function blad_ogolny() {
         $this->template->assign_block_vars('intro', array(
-            'wynik' => '<div class="messages error"> B&#322;&#261;d og&#243;lny tworzenia nowego wpisu do bazy!</div>'
+            'wynik' => '<div class="messages error"> B&#322;&#261;d og&#243;lny tworzenia nowego wpisu do bazy!</div>',
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('error_body.html');
@@ -823,7 +1113,8 @@ class main {
      */
     private function blad_ogolny_pliku() {
         $this->template->assign_block_vars('intro', array(
-            'wynik' => '<div class="messages error"> B&#322;&#261;d og&#243;lny zapisu pliku!</div>'
+            'wynik' => '<div class="messages error"> B&#322;&#261;d og&#243;lny zapisu pliku!</div>',
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('error_body.html');
@@ -1137,7 +1428,8 @@ class main {
         }
 
         $this->template->assign_block_vars('intro', array(
-            'wynik' => $zawartosc
+            'wynik' => $zawartosc,
+            'admin' => $this->daj_admin_link()
         ));
 
         return $this->helper->render('wynik_body.html');
@@ -1206,7 +1498,6 @@ class main {
 
     /**
      * Pobiera pokolorowana nazwe uzytkownika
-     * @global type $db
      * @param type $uid
      * @return string
      */
